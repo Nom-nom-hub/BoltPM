@@ -90,18 +90,24 @@ fn write_lockfile(lock: &BoltLock) {
 }
 
 fn main() {
-    // Initialize logging
-    let env = env_logger::Env::default()
-        .default_filter_or("info");
-    env_logger::init_from_env(env);
-    
     let cli = Cli::parse();
-    
-    // Set log level based on CLI argument
-    if let Ok(level) = cli.log_level.parse() {
-        log::set_max_level(level);
+
+    // Initialize logging after parsing CLI arguments, using CLI log_level as default
+    let env = env_logger::Env::default()
+        .default_filter_or(&cli.log_level);
+    env_logger::init_from_env(env);
+
+    // Set log level based on CLI argument with proper error handling
+    match cli.log_level.parse() {
+        Ok(level) => {
+            log::set_max_level(level);
+        }
+        Err(e) => {
+            eprintln!("Invalid log level '{}': {}. Please use one of: error, warn, info, debug, trace.", cli.log_level, e);
+            std::process::exit(1);
+        }
     }
-    
+
     info!("BoltPM starting up");
     
     match cli.command {

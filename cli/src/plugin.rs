@@ -4,6 +4,7 @@ use std::fmt;
 use libloading::{Library, Symbol};
 use plugin_api::PluginContext;
 use log::{debug, error, info};
+use serde_json;
 
 #[derive(Debug)]
 pub enum PluginError {
@@ -43,6 +44,8 @@ impl From<serde_json::Error> for PluginError {
         PluginError::SerializationError(err)
     }
 }
+
+impl std::error::Error for PluginError {}
 
 pub fn run_plugins(_hook: &str, ctx: &PluginContext) -> Result<(), PluginError> {
     let cwd = std::env::current_dir()
@@ -99,6 +102,9 @@ fn load_and_run_plugin(path: &Path, ctx: &PluginContext) -> Result<(), PluginErr
             Ok(func) => {
                 use std::panic;
 
+                // Note: catch_unwind only catches Rust panics, not segmentation faults 
+                // or aborts from FFI code. For untrusted plugins, consider isolating 
+                // them in a subprocess for better security.
                 let call_result = panic::catch_unwind(|| {
                     func(ctx_bytes.as_ptr(), ctx_bytes.len())
                 });
