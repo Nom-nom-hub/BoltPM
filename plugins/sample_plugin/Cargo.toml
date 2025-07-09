@@ -1,0 +1,11 @@
+[package]
+name = "sample_plugin"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "sample_plugin"
+crate-type = ["cdylib"]
+
+[dependencies]
+plugin_api = { path = "../../plugin_api" } 

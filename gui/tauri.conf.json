@@ -1,0 +1,21 @@
+{
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "devPath": ".",
+    "distDir": "."
+  },
+  "package": {
+    "productName": "BoltPM Desktop",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "windows": [
+      {
+        "title": "BoltPM Desktop",
+        "width": 800,
+        "height": 600
+      }
+    ]
+  }
+} 

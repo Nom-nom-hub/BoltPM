@@ -1,0 +1,18 @@
+[package]
+name = "boltpm"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+semver = "1"
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+flate2 = "1"
+tar = "0.4"
+zip = "0.6"
+tokio = { version = "1", features = ["full"] }
+rayon = "1"
+libloading = "0.8"
+plugin_api = { path = "../plugin_api" } 

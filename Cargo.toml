@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "cli",
+    "gui",
+    "registry",
+    "plugin_api",
+    "plugins/sample_plugin"
+] 
