@@ -3,9 +3,13 @@ name = "boltpm"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+wasm_plugins = ["wasmtime"]
+
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 serde_json = "1"
 semver = "1"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
@@ -15,4 +19,13 @@ zip = "0.6"
 tokio = { version = "1", features = ["full"] }
 rayon = "1"
 libloading = "0.8"
-plugin_api = { path = "../plugin_api" } 
+plugin_api = { path = "../plugin_api" }
+urlencoding = "2.1" 
+thiserror = "1"
+wasmtime = { version = "10", optional = true }
+anyhow = "1"
+
+[dev-dependencies]
+tempfile = "3"
+serial_test = "2" 
+assert_cmd = "2" 

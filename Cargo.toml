@@ -1,8 +1,12 @@
 [workspace]
 members = [
     "cli",
-    "gui",
-    "registry",
     "plugin_api",
-    "plugins/sample_plugin"
-] 
+    "plugins/sample_plugin",
+    "registry",
+    "gui/src-tauri",
+    "test_project",
+    "test_plugin",
+    "test_plugin_fail"
+]
+resolver = "1" 

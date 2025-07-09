@@ -1,12 +1,13 @@
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 
-#[repr(C)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct PluginContext {
+    pub hook: String,
     pub package_name: String,
-    pub version: String,
-    pub path: PathBuf,
-    pub metadata: HashMap<String, String>,
+    pub package_version: String,
+    pub install_path: String,
+    pub env: HashMap<String, String>,
 }
 
 pub type PluginResult = Result<(), String>; 

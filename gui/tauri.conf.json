@@ -2,8 +2,8 @@
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
-    "devPath": ".",
-    "distDir": "."
+    "devPath": "src/frontend",
+    "distDir": "src/frontend"
   },
   "package": {
     "productName": "BoltPM Desktop",

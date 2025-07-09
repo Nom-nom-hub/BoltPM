@@ -1,0 +1,4 @@
+error: no bin target named `boltpm-registry`.
+Available bin targets:
+    test_project
+

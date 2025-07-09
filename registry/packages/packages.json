@@ -1,0 +1,24 @@
+{
+  "e2etestpkg": {
+    "name": "e2etestpkg",
+    "versions": {
+      "1.0.0": {
+        "description": "E2E test package",
+        "yanked": false,
+        "deprecated": true,
+        "deprecation_message": "Deprecated for test"
+      }
+    }
+  },
+  "e2eshpkg": {
+    "name": "e2eshpkg",
+    "versions": {
+      "1.0.0": {
+        "description": "E2E test package",
+        "yanked": false,
+        "deprecated": true,
+        "deprecation_message": "Deprecated for test"
+      }
+    }
+  }
+}

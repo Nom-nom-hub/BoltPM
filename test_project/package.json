@@ -1,0 +1,8 @@
+{
+  "name": "my-boltpm-project",
+  "version": "0.1.0",
+  "dependencies": {
+    "@yarnpkg/lockfile": "^1.1.0",
+    "js-yaml": "^4.1.0"
+  }
+}

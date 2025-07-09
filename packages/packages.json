@@ -1,0 +1,14 @@
+{
+  "e2etestpkg": {
+    "name": "e2etestpkg",
+    "versions": {
+      "1.0.0": "E2E test package"
+    }
+  },
+  "somepkg": {
+    "name": "somepkg",
+    "versions": {
+      "1.0.0": "Test package"
+    }
+  }
+}
