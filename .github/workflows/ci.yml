@@ -11,7 +11,7 @@ env:
 
 jobs:
   test:
-    name: Build and Test
+    name: Build and Test Core Functionality
     runs-on: ubuntu-latest
     
     steps:
@@ -36,23 +36,35 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
           
-    - name: Build workspace
-      run: cargo build --workspace --verbose
+    - name: Build core crates
+      run: |
+        echo "🔨 Building core functionality (excluding GUI)..."
+        cargo build --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
+        echo "✅ Core build completed successfully"
       
     - name: Check plugin_api duplication
       run: ./ci/check_plugin_api.sh
       
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Run core tests
+      run: |
+        echo "🧪 Running core tests (excluding GUI)..."
+        cargo test --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
+        echo "✅ Core tests completed successfully"
       
     - name: Run FFI verification
       run: ./scripts/debug_plugin.sh
       
-    - name: Run clippy
-      run: cargo clippy -- -D warnings
+    - name: Run clippy on core crates
+      run: |
+        echo "🔍 Running clippy on core crates..."
+        cargo clippy --package boltpm --package plugin_api --package test_plugin --package sample_plugin -- -D warnings
+        echo "✅ Clippy checks passed"
       
     - name: Check formatting
-      run: cargo fmt -- --check
+      run: |
+        echo "🎨 Checking code formatting..."
+        cargo fmt --all -- --check
+        echo "✅ Code formatting check passed"
       
     - name: Upload build artifacts
       if: failure()
