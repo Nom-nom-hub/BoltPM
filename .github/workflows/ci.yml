@@ -36,6 +36,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
           
+    - name: Make scripts executable
+      run: |
+        echo "🔧 Making CI scripts executable..."
+        chmod +x ci/check_plugin_api.sh
+        chmod +x scripts/debug_plugin.sh
+        chmod +x scripts/rebuild_all.sh
+        echo "✅ Scripts are now executable"
+          
     - name: Build core crates
       run: |
         echo "🔨 Building core functionality (excluding GUI)..."
