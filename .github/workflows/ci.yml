@@ -36,50 +36,30 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
           
-    - name: Check plugin_api duplication
-      run: |
-        echo "🔍 Checking for duplicate plugin_api artifacts..."
-        chmod +x ci/check_plugin_api.sh
-        ./ci/check_plugin_api.sh
-        echo "✅ plugin_api duplication check passed"
-        
     - name: Build workspace
-      run: |
-        echo "🔨 Building entire workspace..."
-        cargo build --workspace --verbose
-        echo "✅ Build completed successfully"
-        
+      run: cargo build --workspace --verbose
+      
+    - name: Check plugin_api duplication
+      run: ./ci/check_plugin_api.sh
+      
     - name: Run tests
-      run: |
-        echo "🧪 Running all tests..."
-        cargo test --workspace --verbose
-        echo "✅ All tests passed"
-        
-    - name: Verify plugin FFI behavior
-      run: |
-        echo "🔌 Testing plugin FFI boundaries..."
-        chmod +x scripts/debug_plugin.sh
-        ./scripts/debug_plugin.sh
-        echo "✅ Plugin FFI verification completed"
-        
+      run: cargo test --verbose
+      
+    - name: Run FFI verification
+      run: ./scripts/debug_plugin.sh
+      
     - name: Run clippy
-      run: |
-        echo "🔍 Running clippy checks..."
-        cargo clippy --workspace -- -D warnings
-        echo "✅ Clippy checks passed"
-        
+      run: cargo clippy -- -D warnings
+      
     - name: Check formatting
-      run: |
-        echo "🎨 Checking code formatting..."
-        cargo fmt --all -- --check
-        echo "✅ Code formatting check passed"
-        
-    - name: Upload test results
-      if: always()
+      run: cargo fmt -- --check
+      
+    - name: Upload build artifacts
+      if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results
+        name: build-artifacts
         path: |
-          target/debug/
-          /tmp/plugin_canary.txt
+          target/
+          .boltpm/
         retention-days: 7 
