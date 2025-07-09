@@ -27,8 +27,9 @@ fn setup_test_plugin(success: bool) {
     } else {
         "../target/debug/libtest_plugin_fail.dylib"
     };
+    println!("[DEBUG] Copying plugin from: {}", src);
     fs::create_dir_all(&plugins_dir).unwrap();
-    fs::copy(src, plugins_dir.join("test_plugin.dylib")).unwrap();
+    fs::copy(src, plugins_dir.join("test_plugin.dylib")).expect(&format!("Failed to copy plugin from {} to {}", src, plugins_dir.join("test_plugin.dylib").display()));
     // Print plugins after copy for debug
     if let Ok(entries) = fs::read_dir(&plugins_dir) {
         println!("[DEBUG] Plugins after setup:");
