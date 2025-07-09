@@ -61,9 +61,16 @@ pub fn run_plugins(_hook: &str, ctx: &PluginContext) -> Result<(), PluginError> 
         let entry = entry?;
         let path = entry.path();
         println!("[PLUGIN LOADER DEBUG] Found file: {}", path.display());
-        if path.extension().map(|e| e == "so" || e == "dylib" || e == "dll").unwrap_or(false) {
+        if path.extension()
+            .and_then(|e| e.to_str())
+            .map(|e| {
+                let ext = e.to_ascii_lowercase();
+                ext == "so" || ext == "dylib" || ext == "dll"
+            })
+            .unwrap_or(false)
+        {
             println!("[PLUGIN LOADER DEBUG] Attempting to load plugin dylib: {}", path.display());
-            
+
             // Serialize context to JSON bytes for FFI-safe passing
             let ctx_json = serde_json::to_string(ctx)?;
             let ctx_bytes = ctx_json.as_bytes();
