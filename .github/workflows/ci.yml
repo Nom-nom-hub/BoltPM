@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
+        
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+          
+    - name: Check plugin_api duplication
+      run: |
+        echo "🔍 Checking for duplicate plugin_api artifacts..."
+        chmod +x ci/check_plugin_api.sh
+        ./ci/check_plugin_api.sh
+        echo "✅ plugin_api duplication check passed"
+        
+    - name: Build workspace
+      run: |
+        echo "🔨 Building entire workspace..."
+        cargo build --workspace --verbose
+        echo "✅ Build completed successfully"
+        
+    - name: Run tests
+      run: |
+        echo "🧪 Running all tests..."
+        cargo test --workspace --verbose
+        echo "✅ All tests passed"
+        
+    - name: Verify plugin FFI behavior
+      run: |
+        echo "🔌 Testing plugin FFI boundaries..."
+        chmod +x scripts/debug_plugin.sh
+        ./scripts/debug_plugin.sh
+        echo "✅ Plugin FFI verification completed"
+        
+    - name: Run clippy
+      run: |
+        echo "🔍 Running clippy checks..."
+        cargo clippy --workspace -- -D warnings
+        echo "✅ Clippy checks passed"
+        
+    - name: Check formatting
+      run: |
+        echo "🎨 Checking code formatting..."
+        cargo fmt --all -- --check
+        echo "✅ Code formatting check passed"
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          target/debug/
+          /tmp/plugin_canary.txt
+        retention-days: 7 
