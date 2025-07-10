@@ -31,7 +31,7 @@ fn test_sample_plugin_run() {
             panic!("Could not find libsample_plugin.dylib in any known location. Current working directory: {}. Tried: {:?}", cwd.display(), candidates);
         }
     };
-    let func: Symbol<unsafe extern fn(*const u8, usize) -> i32> = unsafe { lib.get(b"run").unwrap() };
+    let func: Symbol<unsafe extern "C" fn(*const u8, usize) -> i32> = unsafe { lib.get(b"run").unwrap() };
     let ctx = PluginContext {
         hook: "testhook".to_string(),
         package_name: "sample".to_string(),
