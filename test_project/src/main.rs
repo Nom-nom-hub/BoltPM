@@ -111,6 +111,8 @@ mod e2e {
             .arg("run")
             .arg("--manifest-path")
             .arg("../../cli/Cargo.toml")
+            .arg("--features")
+            .arg("wasm-support")
             .arg("--bin")
             .arg("boltpm")
             .arg("--")

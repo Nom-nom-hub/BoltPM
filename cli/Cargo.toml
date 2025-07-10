@@ -1,11 +1,15 @@
 [package]
-name = "boltpm"
+name = "boltpm-cli"
 version = "0.1.0"
+description = "BoltPM CLI: Fast, extensible package manager for JS/TS monorepos."
+license = "MIT"
+repository = "https://github.com/yourusername/BoltPM"
 edition = "2021"
 
 [features]
+wasm-support = ["wasmtime", "wasmtime-wasi"]
+
 default = []
-wasm_plugins = ["wasmtime"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -22,10 +26,16 @@ libloading = "0.8"
 plugin_api = { path = "../plugin_api" }
 urlencoding = "2.1" 
 thiserror = "1"
-wasmtime = { version = "10", optional = true }
 anyhow = "1"
 log = "0.4"
 env_logger = "0.10"
+wasmtime = { version = "12", optional = true }
+wasmtime-wasi = { version = "12", optional = true }
+wasmparser = "0.202"
+predicates = "3"
+sha2 = "0.10"
+glob = "0.3"
+colored = "2"
 
 [dev-dependencies]
 tempfile = "3"

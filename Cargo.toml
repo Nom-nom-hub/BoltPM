@@ -1,11 +1,18 @@
+[package]
+name = "boltpm"
+version = "0.1.0"
+description = "A blazing fast, extensible, and workspace-friendly package manager for JS/TS monorepos."
+license = "MIT"
+repository = "https://github.com/yourusername/BoltPM"
+homepage = "https://github.com/yourusername/BoltPM"
+edition = "2021"
+
 [workspace]
 members = [
     "cli",
     "plugin_api",
     "plugins/sample_plugin",
     "registry",
-    "gui/src-tauri",
-    "test_project",
     "test_plugin",
     "test_plugin_fail"
 ]

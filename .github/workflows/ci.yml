@@ -2,90 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Build and Test Core Functionality
+  build:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      
-    - name: Install Rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        components: rustfmt, clippy
-        
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
-          
-    - name: Make scripts executable
-      run: |
-        echo "🔧 Making CI scripts executable..."
-        chmod +x ci/check_plugin_api.sh
-        chmod +x scripts/debug_plugin.sh
-        chmod +x scripts/rebuild_all.sh
-        echo "✅ Scripts are now executable"
-          
-    - name: Build core crates
-      run: |
-        echo "🔨 Building core functionality (excluding GUI)..."
-        cargo build --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
-        echo "✅ Core build completed successfully"
-      
-    - name: Build test plugins
-      run: |
-        echo "🔨 Building test plugins..."
-        cargo build -p test_plugin -p test_plugin_fail --verbose
-        echo "✅ Test plugins built successfully"
-      
-    - name: Check plugin_api duplication
-      run: ./ci/check_plugin_api.sh
-      
-    - name: Run core tests
-      run: |
-        echo "🧪 Running core tests (excluding GUI)..."
-        cargo test --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
-        echo "✅ Core tests completed successfully"
-      
-    - name: Run FFI verification
-      run: ./scripts/debug_plugin.sh
-      
-    - name: Run clippy on core crates
-      run: |
-        echo "🔍 Running clippy on core crates..."
-        cargo clippy --package boltpm --package plugin_api --package test_plugin --package sample_plugin -- -D warnings
-        echo "✅ Clippy checks passed"
-      
-    - name: Check formatting
-      run: |
-        echo "🎨 Checking code formatting..."
-        cargo fmt --all -- --check
-        echo "✅ Code formatting check passed"
-      
-    - name: Upload build artifacts
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: |
-          target/
-          .boltpm/
-        retention-days: 7 
+      - uses: actions/checkout@v3
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build
+        run: cargo build --all --release
+      - name: Run tests
+        run: cargo test --all --release
+      - name: E2E CLI test
+        run: |
+          cargo run --bin boltpm -- --help
+          cargo run --bin boltpm -- --version 

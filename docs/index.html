@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BoltPM - Fast, Modern NPM Alternative</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&family=Montserrat:wght@700;400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="particles-bg"></canvas>
+    <header class="hero">
+        <div class="logo-circle">
+            <img src="boltpm-logo.png" alt="BoltPM Logo" class="boltpm-logo" />
+        </div>
+        <h1>BoltPM</h1>
+        <p class="subtitle">Fast, modern, and extensible NPM alternative for the next generation of JavaScript projects.</p>
+        <a class="cta" href="#quickstart">Get Started</a>
+        <nav>
+            <a href="#features">Features</a>
+            <a href="#quickstart">Quickstart</a>
+            <a href="#usage">Usage</a>
+            <a href="#plugins">Plugins</a>
+            <a href="#screenshots">Screenshots</a>
+            <a href="#contribute">Contribute</a>
+            <a href="https://github.com/yourusername/BoltPM" target="_blank">GitHub</a>
+        </nav>
+    </header>
+    <main>
+        <section id="features" class="features">
+            <h2>Why BoltPM?</h2>
+            <div class="feature-list">
+                <div class="feature">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Optimized for speed with parallel installs and smart caching.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧩</div>
+                    <h3>Plugin System</h3>
+                    <p>Extend with native or WASM plugins for custom workflows.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📦</div>
+                    <h3>Workspace Support</h3>
+                    <p>First-class monorepo and workspace management.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Deterministic Installs</h3>
+                    <p>Lockfile ensures reproducible builds every time.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🛠️</div>
+                    <h3>Modern CLI</h3>
+                    <p>Intuitive, colorful, and scriptable command-line interface.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <h3>Open Source</h3>
+                    <p>MIT licensed and built for the community.</p>
+                </div>
+            </div>
+        </section>
+        <section id="quickstart" class="quickstart">
+            <h2>Quickstart</h2>
+            <div class="quickstart-cards">
+                <div class="quick-card">
+                    <h4>Install</h4>
+                    <pre><code>cargo install boltpm</code></pre>
+                </div>
+                <div class="quick-card">
+                    <h4>Initialize Project</h4>
+                    <pre><code>boltpm init</code></pre>
+                </div>
+                <div class="quick-card">
+                    <h4>Add a Package</h4>
+                    <pre><code>boltpm install lodash</code></pre>
+                </div>
+            </div>
+        </section>
+        <section id="usage">
+            <h2>Usage</h2>
+            <pre><code>boltpm install
+boltpm run &lt;script&gt;
+boltpm update
+boltpm remove &lt;package&gt;
+boltpm plugin list
+</code></pre>
+            <p>See the <a href="https://github.com/yourusername/BoltPM#readme" target="_blank">full documentation</a> for advanced usage, workspace setup, and plugin development.</p>
+        </section>
+        <section id="plugins">
+            <h2>Plugins</h2>
+            <p>BoltPM supports both native and WASM plugins. Easily extend your workflow or integrate with other tools.</p>
+            <ul>
+                <li>Scaffold: <code>boltpm plugin init myplugin</code></li>
+                <li>Build: <code>boltpm plugin build</code></li>
+                <li>Run: <code>boltpm plugin run myplugin</code></li>
+            </ul>
+            <p>See <a href="https://github.com/yourusername/BoltPM#plugins" target="_blank">plugin docs</a> for more.</p>
+        </section>
+        <section id="screenshots">
+            <h2>Screenshots &amp; Demo</h2>
+            <div class="screenshots">
+                <img src="https://placehold.co/500x250?text=BoltPM+CLI" alt="BoltPM CLI Screenshot">
+                <img src="https://placehold.co/500x250?text=Plugin+System" alt="BoltPM Plugin Screenshot">
+            </div>
+        </section>
+        <section id="contribute">
+            <h2>Contribute</h2>
+            <p>Contributions are welcome! Open issues or pull requests on <a href="https://github.com/yourusername/BoltPM" target="_blank">GitHub</a>.</p>
+            <div class="contributors">
+                <span>👤</span> <span>teck</span>
+                <!-- Add more contributors here -->
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 BoltPM. MIT License. | <a href="https://github.com/yourusername/BoltPM" target="_blank">GitHub</a></p>
+        <div class="footer-social">
+            <a href="https://github.com/yourusername/BoltPM" target="_blank" title="GitHub"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.342-3.369-1.342-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.004.07 1.532 1.032 1.532 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.339-2.221-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.025A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.295 2.748-1.025 2.748-1.025.546 1.378.202 2.397.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.847-2.337 4.695-4.566 4.944.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.749 0 .267.18.577.688.48C19.138 20.2 22 16.447 22 12.021 22 6.484 17.523 2 12 2z"></path></svg></a>
+            <a href="https://twitter.com/boltpm" target="_blank" title="Twitter"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor"><path d="M22.46 5.924c-.793.352-1.645.59-2.54.698a4.48 4.48 0 0 0 1.963-2.475 8.94 8.94 0 0 1-2.828 1.082 4.48 4.48 0 0 0-7.64 4.086A12.72 12.72 0 0 1 3.112 4.89a4.48 4.48 0 0 0 1.387 5.976 4.47 4.47 0 0 1-2.03-.56v.057a4.48 4.48 0 0 0 3.594 4.393 4.48 4.48 0 0 1-2.025.077 4.48 4.48 0 0 0 4.184 3.11A8.98 8.98 0 0 1 2 19.54a12.67 12.67 0 0 0 6.88 2.017c8.26 0 12.785-6.84 12.785-12.785 0-.195-.004-.39-.013-.583A9.14 9.14 0 0 0 24 4.59a8.93 8.93 0 0 1-2.54.698z"></path></svg></a>
+            <a href="#" target="_blank" title="Discord"><svg width="1em" height="1em" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.369A19.791 19.791 0 0 0 16.885 3.2a.074.074 0 0 0-.079.037c-.34.607-.719 1.396-.984 2.013a18.524 18.524 0 0 0-5.614 0 12.51 12.51 0 0 0-.995-2.013.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.369a.07.07 0 0 0-.032.027C.533 8.159-.32 11.81.099 15.415a.08.08 0 0 0 .028.056c2.104 1.547 4.13 2.488 6.102 3.13a.077.077 0 0 0 .084-.027c.472-.65.892-1.34 1.249-2.063a.076.076 0 0 0-.041-.104c-.662-.25-1.292-.549-1.899-.892a.077.077 0 0 1-.008-.127c.127-.096.254-.192.375-.291a.074.074 0 0 1 .077-.01c3.967 1.813 8.27 1.813 12.193 0a.073.073 0 0 1 .078.009c.122.099.248.195.376.291a.077.077 0 0 1-.006.127c-.607.343-1.237.642-1.9.893a.076.076 0 0 0-.04.103c.36.723.78 1.413 1.25 2.063a.076.076 0 0 0 .084.028c1.978-.642 4.004-1.583 6.107-3.13a.077.077 0 0 0 .028-.055c.5-4.09-.838-7.704-3.285-11.019a.061.061 0 0 0-.03-.028zM8.02 15.331c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.094 2.157 2.418 0 1.334-.955 2.419-2.157 2.419zm7.974 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.418 2.157-2.418 1.21 0 2.175 1.094 2.157 2.418 0 1.334-.947 2.419-2.157 2.419z"></path></svg></a>
+        </div>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

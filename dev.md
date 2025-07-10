@@ -1,190 +1,112 @@
-# BoltPM Development Plan (Status: ✅ = Done, 🟧 = In Progress, 🕒 = Future)
+# BoltPM Development Guide
 
-## What's Done
-- Deterministic, CWD-agnostic plugin loading and output paths (always workspace-root relative)
-- Robust plugin lifecycle integration tests (success and failure cases)
-- Serial test execution using `serial_test` to avoid race conditions
-- Enhanced debug logging for plugin loading, exit codes, and errors
-- All major CLI, registry, GUI, and plugin system features implemented and tested
-- Unified, public, and serializable `PluginContext` for consistent plugin communication
+## What's Left To Do (Checklist)
 
-## What's Left To Do
-- WASM plugin support 🟧
-- Remote plugin marketplace 🕒
-- GUI auto-update packages 🕒
-- Package audit logs & trust levels 🕒
-- Further test isolation (unique plugin dirs per test) if needed
-
----
-
-## Overview
-BoltPM is a fast, modern, cross-platform NPM alternative written in Rust. It consists of a production-quality CLI, a real-time GUI frontend, a self-hosted private registry, and a dynamic plugin system for install hooks.
-
----
-
-## 1. Project Structure
-
-boltpm/
-├── cli/ # CLI tool (boltpm)
-├── gui/ # Desktop GUI (boltpm-gui)
-├── registry/ # Self-hosted registry (boltpm-registry)
-├── plugins/ # Plugin loader + sample plugin
-│ └── sample_plugin/
-├── plugin_api/ # Shared plugin API crate
-├── Cargo.toml # Workspace root
-└── README.md
-
+- [ ] **Finalize WASM plugin support**
+    - [ ] Ensure WASM plugins receive correct PluginContext and output path
+    - [ ] Add integration tests for WASM plugins (success/failure)
+    - [ ] Document WASM plugin authoring and usage
+- [ ] **Advanced lifecycle hooks**
+    - [ ] Allow plugins to register for custom hooks (preuninstall, onError, etc.)
+    - [ ] Document all available hooks and plugin subscription
+- [ ] **Plugin marketplace (optional/future)**
+    - [ ] Implement remote plugin registry/marketplace
+    - [ ] Add CLI commands for searching/installing remote plugins
+- [ ] **GUI enhancements**
+    - [ ] Add more features to Tauri GUI (auto-update, audit logs, etc.)
+    - [ ] Improve real-time feedback and error reporting
+- [ ] **Error handling & reporting**
+    - [ ] Summarize all plugin errors at end of install/update
+    - [ ] Add more granular exit codes for CI/automation
+    - [ ] (Optional) Add error telemetry
+- [ ] **Test coverage & CI**
+    - [ ] Expand integration tests for edge cases (plugin failures, workspace edge cases)
+    - [ ] Add tests for new plugin types and hooks
+    - [ ] Ensure all new features are covered by CI
+- [ ] **Documentation & DX**
+    - [ ] Expand docs for plugin authors (native & WASM)
+    - [ ] Add usage examples and troubleshooting tips
+    - [ ] Polish website/docs for onboarding/marketing
+- [ ] **Performance & scalability (optional)**
+    - [ ] Profile install and plugin execution for large monorepos
+    - [ ] Optimize plugin loading and workspace traversal if needed
 
 ---
 
-## 2. Tech Stack
+## Features
 
-- **Language:** Rust (2021+) ✅
-- **CLI:** `clap`, `serde`, `semver`, `reqwest`, `flate2`, `tar`, `zip`, `rayon`/`tokio` ✅
-- **GUI:** `tauri` (webview, recommended) ✅
-- **Registry:** `axum` ✅
-- **Plugin System:**  
-  - Dynamic library plugins: `.so`, `.dylib`, `.dll` ✅  
-  - Loaded via `libloading` with workspace-root relative paths ✅  
-  - Unified, public, and serde-serializable `PluginContext` ✅  
-  - Robust plugin lifecycle tests with serial execution ✅  
-  - Sample plugin updated for new API ✅  
-  - WASM plugin support integration 🟧  
-- **Testing:** Rust built-in test framework, mock backends for GUI 🚧
+### Core Package Management
+- Install, update, remove, and search for packages (npm-style commands)
+- Workspace support: multi-package monorepos with a single lockfile
+- Lockfile management: generates and updates `bolt.lock` for reproducible installs
+- Dependency resolution for all workspace packages
 
----
+### Plugin System
+- Per-package plugin discovery: `.boltpm/plugins/` in each package, fallback to workspace root
+- Native (dylib) plugin support (Rust)
+- WASM plugin support (if enabled)
+- Plugin context isolation: each plugin gets `output_path`, `install_path`, and env vars
+- Per-package plugin output: `.boltpm/plugins_output/<package>/`
+- Lifecycle hooks: `preinstall`, `postinstall`, etc.
+- Easy plugin authoring (Rust or WASM)
 
-## 3. Component Breakdown
+### CLI & UX
+- Modern, colored CLI output (banner, emoji, color-coded statuses)
+- Beautiful, user-friendly help menu
+- Concise plugin execution summary after install
+- Minimal/no debug noise in production output
 
-### 3.1 CLI (boltpm)
-- [x] Subcommands: `install`, `remove`, `update`, `run`, `init`, `link`, etc.
-- [x] Parse `package.json` with `serde`
-- [x] Dependency resolution with `semver`
-- [x] Download/extract packages with `reqwest`, `flate2`, `tar`, `zip`
-- [x] Parallelism with `tokio` (ready for rayon)
-- [x] Deterministic installs via `bolt.lock`
-- [x] Cache in `.boltpm/`
-- [x] Plugin hooks: preinstall, postinstall, onError
-- [x] Migration scripts for npm, Yarn, pnpm
+### Testing & Reliability
+- Automated integration tests for per-package plugin execution and output
+- Error handling: CLI continues on plugin errors, summarizes failures, uses proper exit codes
 
-### 3.2 GUI (boltpm-gui)
-- [x] Built with `tauri` (webview)
-- [x] Live install logs
-- [x] Dependency tree visualization
-- [x] Search/install/uninstall packages
-- [x] View/edit `package.json`
-- [x] Show cache size
-- [x] Config tab
-- [x] Communicate with CLI/core via IPC
-- [x] Dark mode, accessibility, error handling
-
-### 3.3 Registry (boltpm-registry)
-- [x] Built with `axum`
-- [x] Endpoints: `PUT` for publishing `.tgz`, `GET` for metadata and tarballs, JSON index
-- [x] Token-based authentication (stub, ready for prod)
-- [x] Store metadata in `packages.json`
-- [x] Store tarballs in `./packages/<name>/<version>/`
-- [x] CORS enabled for GUI
-
-### 3.4 Plugin System
-- [x] Dynamic library plugins: `.so`, `.dylib`, `.dll`
-- [x] Loaded via `libloading` with workspace-root relative paths
-- [x] Unified, public, and serde-serializable `PluginContext`
-- [x] Plugin lifecycle tests with serial execution to avoid race conditions
-- [x] Robust loader and plugin lifecycle integration tests (success/failure)
-- [x] Sample plugin updated for new PluginContext fields
-- [🟧] WASM plugin support (integration test infrastructure working; final integration ongoing)
-- [ ] Remote marketplace 🕒
+### Extensibility
+- Plugins can subscribe to specific lifecycle hooks
+- Pluggable architecture for future plugin types/hooks
 
 ---
 
-## 4. Milestones
+## Development Workflow
 
-- [x] **Workspace & Scaffolding**
-  - [x] Set up Rust workspace and all crates
-  - [x] Add minimal code to each crate
-- [x] **CLI Core**
-  - [x] Implement `init`, `install`, `remove`, `update`, `run`, `link`
-  - [x] Lockfile and cache management
-  - [x] Plugin hook integration
-- [x] **Registry**
-  - [x] Implement endpoints for publish, fetch, metadata
-  - [x] Local storage and authentication
-- [x] **GUI**
-  - [x] Tauri app with live logs, dependency tree, search, config
-  - [x] IPC with CLI/core
-- [x] **Plugin System**
-  - [x] Plugin loader and API
-  - [x] Sample plugin
-- [x] **Testing & CI**
-  - [x] Unit tests for CLI and registry
-  - [x] GUI tests with mock backend (basic)
-  - [x] Plugin loader tests
-- [🟧] **WASM plugin support**
-  - [🟧] Integration test harness and WASM plugin builds complete
-  - [🟧] CLI integration and lifecycle behavior ongoing
-- [x] **Docs & Polish**
-  - [x] README, dev docs, usage examples
-  - [x] Branding, UX polish
+1. **Build the CLI:**
+   ```sh
+   cargo build -p boltpm
+   ```
+2. **Run the CLI:**
+   ```sh
+   ./target/debug/boltpm install
+   # or from a workspace:
+   cd test_project && ../target/debug/boltpm install
+   ```
+3. **Develop Plugins:**
+   - Write plugins in Rust (see `plugins/sample_plugin/`).
+   - Build with `cargo build -p sample_plugin`.
+   - Copy `.dylib` to the target package's `.boltpm/plugins/` directory.
+   - Plugins receive a `PluginContext` with all relevant paths and env.
+   - Output files should be written to `ctx.output_path` for isolation.
 
----
+4. **Integration Testing:**
+   - See `tests/integration/per_package_plugin.rs` for examples.
+   - Use `assert_cmd`, `tempfile`, and `predicates` crates.
+   - Fixtures are under `tests/fixtures/`.
 
-## 5. Testing Strategy
+5. **Debugging:**
+   - Use the `--verbose` flag for extra output (if enabled).
+   - For workspace issues, ensure you run from the correct directory with the right `bolt.lock`.
 
-- [x] **CLI:** Unit and integration tests for all commands
-- [x] **Registry:** Endpoint tests, authentication, error handling
-- [x] **GUI:** Component tests, mock backend for registry/CLI
-- [x] **Plugins:** Loader tests, sample plugin integration
-- [x] **CI:** Enforce test coverage, linting, build checks
-- [🟧] **WASM:** Lifecycle integration tests (success and failure cases)
+6. **Contributing:**
+   - Keep CLI output clean (no debug prints in production).
+   - Document new features in this file and in the help menu.
+   - Add tests for new plugin or workspace features.
 
 ---
 
-## 6. Future Plans (Scaffold Only)
-- [🟧] WASM plugin support
-- [ ] Remote plugin marketplace
-- [ ] GUI auto-update packages
-- [ ] Package audit logs & trust levels
+## Gotchas & Tips
+- Workspace globs are relative to the project root. Always run from the correct directory.
+- Plugins must write output to `ctx.output_path` for per-package isolation.
+- If a plugin fails, the CLI will summarize errors but continue (unless critical).
+- For WASM plugins, ensure wasmtime is enabled and the plugin exposes a `_run` function.
 
 ---
 
-## 7. Contributing
-- [x] Fork, branch, and PR workflow
-- [x] Code style: rustfmt, clippy
-- [x] All contributions must include tests
-
----
-
-## 8. References
-- [Rust Book](https://doc.rust-lang.org/book/)
-- [Tauri Docs](https://tauri.app/)
-- [Axum Docs](https://docs.rs/axum/)
-- [Serde Docs](https://serde.rs/)
-- [Clap Docs](https://docs.rs/clap/) 
-
-## Lockfile (`bolt.lock`)
-
-BoltPM uses a JSON lockfile (`bolt.lock`) to ensure deterministic installs. The lockfile records the exact version, resolved tarball URL, and dependency tree for every installed package. This guarantees that repeated installs produce the same dependency graph, even if newer versions are published.
-
-Example format:
-```json
-{
-  "packages": {
-    "foo": {
-      "version": "1.2.3",
-      "resolved": "http://localhost:4000/v1/foo/1.2.3/",
-      "dependencies": {
-        "bar": "2.0.0"
-      }
-    },
-    "bar": {
-      "version": "2.0.0",
-      "resolved": "http://localhost:4000/v1/bar/2.0.0/",
-      "dependencies": {}
-    }
-  }
-}
-On install, BoltPM will use bolt.lock to pin versions if present.
-On update, the lockfile is refreshed.
-On remove, entries are deleted from the lockfile.
-If bolt.lock and package.json are out of sync, BoltPM will warn or error (with --frozen-lockfile).
+For more, see the docs/ folder and the CLI help menu.

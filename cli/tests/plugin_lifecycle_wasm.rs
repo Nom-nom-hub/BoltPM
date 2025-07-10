@@ -1,9 +1,9 @@
-#[cfg(feature = "wasm_plugins")]
 #[test]
 fn test_wasm_plugin_lifecycle_success() {
     use assert_cmd::Command;
     use std::fs;
     use std::path::Path;
+    use predicates;
 
     // Clean plugins dir
     let plugin_dir = Path::new(".boltpm/plugins");
@@ -44,12 +44,12 @@ fn test_wasm_plugin_lifecycle_success() {
     assert_eq!(contents, "wasm plugin ran");
 }
 
-#[cfg(feature = "wasm_plugins")]
 #[test]
 fn test_wasm_plugin_lifecycle_failure() {
     use assert_cmd::Command;
     use std::fs;
     use std::path::Path;
+    use predicates;
 
     // Clean plugins dir
     let plugin_dir = Path::new(".boltpm/plugins");
@@ -88,4 +88,60 @@ fn test_wasm_plugin_lifecycle_failure() {
     assert!(marker.exists(), "WASM plugin did not write marker file");
     let contents = fs::read_to_string(marker).unwrap();
     assert_eq!(contents, "wasm plugin ran");
+}
+
+#[test]
+fn test_plugin_list_and_uninstall() {
+    use assert_cmd::Command;
+    use std::fs;
+    use std::path::Path;
+    use predicates;
+    // Setup: copy a WASM plugin to .boltpm/plugins
+    let plugin_dir = Path::new(".boltpm/plugins");
+    fs::create_dir_all(plugin_dir).unwrap();
+    let plugin_path = plugin_dir.join("test_plugin.wasm");
+    fs::copy("tests/fixtures/plugins/success.wasm", &plugin_path).unwrap();
+    // List plugins
+    let mut cmd = Command::cargo_bin("boltpm").unwrap();
+    cmd.args(["plugin", "list"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("test_plugin.wasm"));
+    // Uninstall plugin
+    let mut cmd = Command::cargo_bin("boltpm").unwrap();
+    cmd.args(["plugin", "uninstall", "test_plugin"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("Uninstalling plugin"));
+    // List again: should be empty
+    let mut cmd = Command::cargo_bin("boltpm").unwrap();
+    cmd.args(["plugin", "list"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("No plugins installed"));
+    // Uninstall non-existent plugin
+    let mut cmd = Command::cargo_bin("boltpm").unwrap();
+    cmd.args(["plugin", "uninstall", "doesnotexist"])
+        .assert()
+        .success()
+        .stdout(predicates::str::contains("not found"));
+}
+
+#[test]
+fn test_plugin_install_abi_check() {
+    use assert_cmd::Command;
+    use std::fs;
+    use std::path::Path;
+    use predicates;
+    // Simulate install of a plugin missing _boltpm_plugin_v1 (failure.wasm)
+    let plugin_dir = Path::new(".boltpm/plugins");
+    fs::create_dir_all(plugin_dir).unwrap();
+    let plugin_path = plugin_dir.join("bad_plugin.wasm");
+    fs::copy("tests/fixtures/plugins/failure.wasm", &plugin_path).unwrap();
+    // Try to run the plugin (should fail ABI check)
+    let mut cmd = Command::cargo_bin("boltpm").unwrap();
+    cmd.args(["plugin", "run", "bad_plugin"])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("missing required ABI version export"));
 } 

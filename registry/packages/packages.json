@@ -1,6 +1,6 @@
 {
-  "e2eshpkg": {
-    "name": "e2eshpkg",
+  "e2etestpkg": {
+    "name": "e2etestpkg",
     "versions": {
       "1.0.0": {
         "description": "E2E test package",
@@ -10,8 +10,8 @@
       }
     }
   },
-  "e2etestpkg": {
-    "name": "e2etestpkg",
+  "e2eshpkg": {
+    "name": "e2eshpkg",
     "versions": {
       "1.0.0": {
         "description": "E2E test package",

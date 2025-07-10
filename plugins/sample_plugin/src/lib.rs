@@ -17,16 +17,21 @@ pub extern "C" fn run(ctx_ptr: *const u8, ctx_len: usize) -> i32 {
             return 1;
         }
     };
-    // Plugin logic: write output file to ctx.install_path/.boltpm/plugins_output/PLUGIN_TEST
-    let output_dir = PathBuf::from(&ctx.install_path).join(".boltpm/plugins_output");
+    println!("[SamplePlugin] Executing plugin...");
+    println!("[SamplePlugin] ctx.output_path: {:?}", ctx.output_path);
+    let output_dir = PathBuf::from(&ctx.output_path);
+    let output_file = output_dir.join("PLUGIN_TEST");
     if let Err(e) = fs::create_dir_all(&output_dir) {
-        let _ = fs::write("/tmp/boltpm_plugin_error.txt", format!("Failed to create output dir: {}", e));
+        eprintln!("[SamplePlugin] Failed to create output directory: {}", e);
         return 1;
     }
-    let output_file = output_dir.join("PLUGIN_TEST");
-    if let Err(e) = fs::write(&output_file, "plugin ran") {
-        let _ = fs::write("/tmp/boltpm_plugin_error.txt", format!("Failed to write output file: {}", e));
+    if let Err(e) = fs::write(&output_file, "Plugin executed successfully!") {
+        eprintln!("[SamplePlugin] Failed to write output file: {}", e);
         return 1;
+    }
+    // Write install_path debug info to a file
+    let debug_file = output_dir.join("INSTALL_PATH_DEBUG");
+    if let Err(e) = fs::write(&debug_file, &ctx.install_path) {
     }
     0
 } 

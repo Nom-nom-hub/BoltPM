@@ -1,3 +1,7 @@
 {
-  "bolt": true
+  "packages": {},
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

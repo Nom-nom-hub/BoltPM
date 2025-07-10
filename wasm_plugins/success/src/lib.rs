@@ -1,15 +1,20 @@
-extern crate alloc;
-use core::slice;
-use core::str;
-
-#[link(wasm_import_module = "env")]
-extern "C" {
-    fn host_write_file(ptr: i32, len: i32);
-}
+// Minimal BoltPM WASM plugin (WASI + host logging)
 
 #[no_mangle]
-pub extern "C" fn run(_ptr: i32, _len: i32) -> i32 {
-    let msg = b"wasm plugin ran";
-    unsafe { host_write_file(msg.as_ptr() as i32, msg.len() as i32); }
-    0
+pub extern "C" fn _boltpm_plugin_v1() {}
+
+#[no_mangle]
+pub extern "C" fn _run() {
+    // WASI stdout
+    println!("[PLUGIN] Hello from WASI stdout!");
+
+    // Host logging function
+    let msg = "[PLUGIN] Hello from host logging!";
+    unsafe {
+        boltpm_log(msg.as_ptr(), msg.len());
+    }
+}
+
+extern "C" {
+    fn boltpm_log(ptr: *const u8, len: usize);
 } 

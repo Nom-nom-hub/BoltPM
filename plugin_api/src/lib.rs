@@ -7,6 +7,7 @@ pub struct PluginContext {
     pub package_name: String,
     pub package_version: String,
     pub install_path: String,
+    pub output_path: String,
     pub env: HashMap<String, String>,
 }
 
