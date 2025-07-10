@@ -97,16 +97,7 @@ fn main() {
         .default_filter_or(&cli.log_level);
     env_logger::init_from_env(env);
 
-    // Set log level based on CLI argument with proper error handling
-    match cli.log_level.parse() {
-        Ok(level) => {
-            log::set_max_level(level);
-        }
-        Err(e) => {
-            eprintln!("Invalid log level '{}': {}. Please use one of: error, warn, info, debug, trace.", cli.log_level, e);
-            std::process::exit(1);
-        }
-    }
+    // Logging is initialized above using env_logger and the CLI log_level as default.
 
     info!("BoltPM starting up");
     
