@@ -96,7 +96,7 @@ async fn publish_package(
     let meta_path = FsPath::new("packages/packages.json");
     let mut meta: HashMap<String, PackageMeta> = if meta_path.exists() {
         let raw = fs::read(meta_path).unwrap();
-        let mut meta: HashMap<String, PackageMeta> = serde_json::from_slice(&raw).unwrap();
+        let meta: HashMap<String, PackageMeta> = serde_json::from_slice(&raw).unwrap();
         migrate_meta(meta)
     } else {
         HashMap::new()

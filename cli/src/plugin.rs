@@ -1,224 +1,133 @@
 use std::fs;
-use std::path::{Path, PathBuf};
-use std::io::{self, Write};
-use serde_json;
-use anyhow;
+use std::path::Path;
+use std::fmt;
 use libloading::{Library, Symbol};
-
-#[cfg(feature = "wasm_plugins")]
-use wasmtime::*;
-
 use plugin_api::PluginContext;
+use log::{debug, error, info};
+use serde_json;
 
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug)]
 pub enum PluginError {
-    #[error("IO error: {0}")]
-    Io(#[from] io::Error),
-    #[error("Plugin load error: {0}")]
-    Load(#[from] libloading::Error),
-    #[error("Plugin returned error code: {0}")]
-    PluginFailed(i32),
-    #[error("Serialization error: {0}")]
-    Serde(#[from] serde_json::Error),
+    IoError(std::io::Error),
+    LoadingError(libloading::Error),
+    SerializationError(serde_json::Error),
+    PluginExecutionError(i32),
+    PluginPanicError,
 }
 
-#[allow(dead_code)]
-pub enum PluginType {
-    Native(PathBuf),
-    Wasm(PathBuf),
-}
-
-#[allow(dead_code)]
-pub fn discover_plugins(plugin_dir: &Path) -> Vec<PluginType> {
-    let mut plugins = vec![];
-    let mut seen = std::collections::HashSet::new();
-    if let Ok(entries) = fs::read_dir(plugin_dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-            if cfg!(feature = "wasm_plugins") && path.extension().map(|e| e == "wasm").unwrap_or(false) {
-                if seen.insert(stem.to_string()) {
-                    plugins.push(PluginType::Wasm(path));
-                }
-            } else if path.extension().map(|e| e == "dylib" || e == "so" || e == "dll").unwrap_or(false) {
-                if !seen.contains(stem) {
-                    plugins.push(PluginType::Native(path));
-                }
-            }
+impl fmt::Display for PluginError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PluginError::IoError(e) => write!(f, "IO error: {}", e),
+            PluginError::LoadingError(e) => write!(f, "Plugin loading error: {}", e),
+            PluginError::SerializationError(e) => write!(f, "Serialization error: {}", e),
+            PluginError::PluginExecutionError(code) => write!(f, "Plugin execution failed with code: {}", code),
+            PluginError::PluginPanicError => write!(f, "Plugin panicked during execution"),
         }
     }
-    plugins
 }
 
-#[allow(dead_code)]
-pub fn run_plugin(plugin: PluginType, context: &serde_json::Value) -> anyhow::Result<i32> {
-    match plugin {
-        PluginType::Native(path) => {
-            run_native_plugin(&path)
-        },
-        PluginType::Wasm(path) => {
-            #[cfg(feature = "wasm_plugins")]
-            { run_wasm_plugin(&path, context) }
-            #[cfg(not(feature = "wasm_plugins"))]
-            { Err(anyhow::anyhow!("WASM plugin support not enabled")) }
-        },
+impl From<std::io::Error> for PluginError {
+    fn from(err: std::io::Error) -> Self {
+        PluginError::IoError(err)
     }
 }
 
-#[allow(dead_code)]
-pub fn run_plugins(hook: &str, ctx: &PluginContext) -> Result<(), PluginError> {
-    let cwd = std::env::current_dir().expect("Failed to get current working directory");
-    println!("[PLUGIN LOADER DEBUG] Current working directory: {}", cwd.display());
+impl From<libloading::Error> for PluginError {
+    fn from(err: libloading::Error) -> Self {
+        PluginError::LoadingError(err)
+    }
+}
+
+impl From<serde_json::Error> for PluginError {
+    fn from(err: serde_json::Error) -> Self {
+        PluginError::SerializationError(err)
+    }
+}
+
+impl std::error::Error for PluginError {}
+
+pub fn run_plugins(_hook: &str, ctx: &PluginContext) -> Result<(), PluginError> {
+    let cwd = std::env::current_dir()
+        .map_err(|e| PluginError::IoError(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            format!("Failed to get current working directory: {}", e)
+        )))?;
     let plugins_dir = cwd.join(".boltpm/plugins");
-    println!("[PLUGIN LOADER DEBUG] Resolved plugin directory: {}", plugins_dir.display());
+    debug!("Searching for plugins in: {}", plugins_dir.display());
+    
     if !plugins_dir.exists() {
-        println!("[PLUGIN DEBUG] Plugins directory does not exist: {}", plugins_dir.display());
+        debug!("Plugins directory does not exist: {}", plugins_dir.display());
         return Ok(()); // No plugins to run
     }
+    
     let entries = fs::read_dir(&plugins_dir)?;
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
-        println!("[PLUGIN LOADER DEBUG] Found file: {}", path.display());
-        if path.extension().and_then(|s| s.to_str()).map(|s| {
-            s == "so" || s == "dll" || s == "dylib"
-        }).unwrap_or(false) {
-            let abs_path = path.canonicalize().unwrap_or(path.clone());
-            println!("[PLUGIN LOADER DEBUG] Attempting to load plugin dylib: {}", abs_path.display());
-            // Load the plugin
-            unsafe {
-                match Library::new(&path) {
-                    Ok(lib) => {
-                        let func: Result<Symbol<unsafe extern fn(*const u8, usize) -> i32>, _> = lib.get(b"run");
-                        match func {
-                            Ok(func) => {
-                                let ctx_json = serde_json::to_vec(ctx)?;
-                                std::fs::write("/tmp/boltpm_plugin_ctx.json", &ctx_json).expect("Failed to write plugin context JSON");
-                                eprintln!("[PluginLoader] About to call run()");
-                                let result = std::panic::catch_unwind(|| {
-                                    let code = func(ctx_json.as_ptr(), ctx_json.len());
-                                    eprintln!("[PluginLoader] run() returned: {}", code);
-                                    code
-                                });
-                                match result {
-                                    Ok(code) => {
-                                        if code != 0 {
-                                            eprintln!("[PLUGIN ERROR] Plugin {} failed with code {}", abs_path.display(), code);
-                                            return Err(PluginError::PluginFailed(code));
-                                        }
-                                    },
-                                    Err(_) => {
-                                        eprintln!("[PluginLoader] run() panicked!");
-                                        return Err(PluginError::PluginFailed(-1));
-                                    }
-                                }
-                            },
-                            Err(e) => {
-                                eprintln!("[PLUGIN ERROR] Failed to get 'run' symbol from {}: {}", abs_path.display(), e);
-                                return Err(PluginError::Load(e));
-                            }
-                        }
-                    },
-                    Err(e) => {
-                        eprintln!("[PLUGIN ERROR] Failed to load plugin {}: {}", abs_path.display(), e);
-                        return Err(PluginError::Load(e));
-                    }
-                }
-            }
+        debug!("Found file: {}", path.display());
+        
+        if is_plugin_file(&path) {
+            debug!("Attempting to load plugin: {}", path.display());
+            load_and_run_plugin(&path, ctx)?;
         } else {
-            println!("[PLUGIN LOADER DEBUG] Skipping file with unsupported extension: {}", path.display());
+            debug!("Skipping file with unsupported extension: {}", path.display());
         }
     }
     Ok(())
 }
 
-// Existing native plugin loader logic
-#[allow(dead_code)]
-fn run_native_plugin(path: &Path) -> anyhow::Result<i32> {
-    let cwd = std::env::current_dir().expect("Failed to get current working directory");
-    let plugins_dir = cwd.join(".boltpm/plugins");
-    println!("[PLUGIN LOADER DEBUG] Searching for plugins in: {}", plugins_dir.display());
-    if !plugins_dir.exists() {
-        println!("[PLUGIN DEBUG] Plugins directory does not exist: {}", plugins_dir.display());
-        return Ok(0); // No plugins to run
-    }
-    let entries = fs::read_dir(&plugins_dir)?;
-    for entry in entries {
-        let entry = entry?;
-        let path = entry.path();
-        println!("[PLUGIN LOADER DEBUG] Found file: {}", path.display());
-        if path.extension().and_then(|s| s.to_str()).map(|s| {
-            s == "so" || s == "dll" || s == "dylib"
-        }).unwrap_or(false) {
-            let abs_path = path.canonicalize().unwrap_or(path.clone());
-            println!("[PLUGIN LOADER DEBUG] Attempting to load plugin dylib: {}", abs_path.display());
-            // Load the plugin
-            unsafe {
-                match Library::new(&path) {
-                    Ok(lib) => {
-                        let func: Result<Symbol<unsafe extern fn(*const u8, usize) -> i32>, _> = lib.get(b"run");
-                        match func {
-                            Ok(func) => {
-                                let ctx_json = serde_json::to_vec(&serde_json::Value::Null)?; // Placeholder for context
-                                let code = func(ctx_json.as_ptr(), ctx_json.len());
-                                println!("[PLUGIN DEBUG] Plugin {} returned code {}", abs_path.display(), code);
-                                if code != 0 {
-                                    eprintln!("[PLUGIN ERROR] Plugin {} failed with code {}", abs_path.display(), code);
-                                    return Err(PluginError::PluginFailed(code).into());
-                                }
-                                return Ok(code);
-                            },
-                            Err(e) => {
-                                eprintln!("[PLUGIN ERROR] Failed to get 'run' symbol from {}: {}", abs_path.display(), e);
-                                return Err(PluginError::Load(e).into());
-                            }
+/// Check if a file is a valid plugin based on its extension
+fn is_plugin_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .map(|e| {
+            let ext = e.to_ascii_lowercase();
+            ext == "so" || ext == "dylib" || ext == "dll"
+        })
+        .unwrap_or(false)
+}
+
+/// Load and execute a plugin with proper error handling
+fn load_and_run_plugin(path: &Path, ctx: &PluginContext) -> Result<(), PluginError> {
+    // Serialize context to JSON bytes for FFI-safe passing
+    let ctx_json = serde_json::to_string(ctx)?;
+    let ctx_bytes = ctx_json.as_bytes();
+    
+    unsafe {
+        let lib = Library::new(path)?;
+        let func: Result<Symbol<unsafe extern "C" fn(*const u8, usize) -> i32>, _> = lib.get(b"run");
+        
+        match func {
+            Ok(func) => {
+                use std::panic;
+
+                // Note: catch_unwind only catches Rust panics, not segmentation faults 
+                // or aborts from FFI code. For untrusted plugins, consider isolating 
+                // them in a subprocess for better security.
+                let call_result = panic::catch_unwind(|| {
+                    func(ctx_bytes.as_ptr(), ctx_bytes.len())
+                });
+
+                match call_result {
+                    Ok(result) => {
+                        if result != 0 {
+                            error!("Plugin {} failed with code {}", path.display(), result);
+                            return Err(PluginError::PluginExecutionError(result));
                         }
-                    },
-                    Err(e) => {
-                        eprintln!("[PLUGIN ERROR] Failed to load plugin {}: {}", abs_path.display(), e);
-                        return Err(PluginError::Load(e).into());
+                        info!("Plugin {} executed successfully", path.display());
+                    }
+                    Err(_) => {
+                        error!("Plugin {} panicked during execution", path.display());
+                        return Err(PluginError::PluginPanicError);
                     }
                 }
             }
-        } else {
-            println!("[PLUGIN LOADER DEBUG] Skipping file with unsupported extension: {}", path.display());
+            Err(e) => {
+                error!("Failed to load 'run' function from {}: {}", path.display(), e);
+                return Err(PluginError::LoadingError(e));
+            }
         }
     }
-    Ok(0) // No native plugin found
-}
-
-#[cfg(feature = "wasm_plugins")]
-#[allow(dead_code)]
-fn run_wasm_plugin(path: &Path, context: &serde_json::Value) -> anyhow::Result<i32> {
-    use wasmtime::{Caller, Extern, Func, Linker, Memory};
-    use std::fs;
-    use std::path::PathBuf;
-    let engine = Engine::default();
-    let module = Module::from_file(&engine, path)?;
-    let mut store = Store::new(&engine, ());
-    let mut linker = Linker::new(&engine);
-    // Provide host_write_file import
-    linker.func_wrap("env", "host_write_file", |mut caller: Caller<'_, ()>, ptr: i32, len: i32| {
-        let memory = caller.get_export("memory").and_then(|e| e.into_memory()).ok_or(anyhow::anyhow!("No memory export"))?;
-        let mut buf = vec![0u8; len as usize];
-        memory.read(&caller, ptr as usize, &mut buf)?;
-        let out_path = PathBuf::from(".boltpm/plugins_output/wasm_test_hook");
-        fs::create_dir_all(out_path.parent().unwrap()).ok();
-        fs::write(&out_path, &buf)?;
-        Ok(())
-    })?;
-    let instance = linker.instantiate(&mut store, &module)?;
-    let memory = instance
-        .get_memory(&mut store, "memory")
-        .ok_or_else(|| anyhow::anyhow!("WASM plugin missing `memory` export"))?;
-    let run_func = instance
-        .get_func(&mut store, "run")
-        .ok_or_else(|| anyhow::anyhow!("WASM plugin missing `run` export"))?
-        .typed::<(i32, i32), i32>(&store)?;
-    let ctx_json = serde_json::to_vec(context)?;
-    let ctx_len = ctx_json.len() as i32;
-    let ctx_ptr = 1024; // fixed offset for now
-    memory.write(&mut store, ctx_ptr as usize, &ctx_json)?;
-    let result = run_func.call(&mut store, (ctx_ptr, ctx_len))?;
-    Ok(result)
+    Ok(())
 } 

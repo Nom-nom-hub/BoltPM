@@ -4,12 +4,11 @@ fn main() {
 
 #[cfg(test)]
 mod e2e {
-    use std::process::{Command, Stdio, Child};
-    use std::{thread, time};
-    use std::net::TcpListener;
-    use std::io::{Read, Write};
-    use std::fs::File;
+    use std::process::Command;
+    use std::io::Read;
     use tempfile::NamedTempFile;
+    use std::net::TcpListener;
+    use std::fs::File;
     use std::{fs, path::Path};
     use std::path::PathBuf;
 
@@ -23,7 +22,7 @@ mod e2e {
             panic!("Port 4000 already in use — cannot launch registry.");
         }
         // Redirect registry output to a temp file
-        let mut log_file = NamedTempFile::new().expect("Failed to create temp log file");
+        let log_file = NamedTempFile::new().expect("Failed to create temp log file");
         let log_path = log_file.path().to_owned();
         let child = std::process::Command::new("cargo")
             .args(["run", "--bin", "boltpm-registry"])

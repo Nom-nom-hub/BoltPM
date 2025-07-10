@@ -11,6 +11,7 @@ fn test_sample_plugin_run() {
     use std::path::PathBuf;
     use libloading::{Library, Symbol};
     use std::env;
+    use serde_json;
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = manifest_dir.join("../../").canonicalize().expect("Failed to canonicalize workspace root");
     let candidates = [
@@ -30,7 +31,7 @@ fn test_sample_plugin_run() {
             panic!("Could not find libsample_plugin.dylib in any known location. Current working directory: {}. Tried: {:?}", cwd.display(), candidates);
         }
     };
-    let func: Symbol<unsafe extern fn(PluginContext) -> i32> = unsafe { lib.get(b"run").unwrap() };
+    let func: Symbol<unsafe extern fn(*const u8, usize) -> i32> = unsafe { lib.get(b"run").unwrap() };
     let ctx = PluginContext {
         hook: "testhook".to_string(),
         package_name: "sample".to_string(),
@@ -38,7 +39,9 @@ fn test_sample_plugin_run() {
         install_path: "/tmp/sample".to_string(),
         env: HashMap::new(),
     };
-    let result = unsafe { func(ctx) };
+    let ctx_json = serde_json::to_string(&ctx).unwrap();
+    let ctx_bytes = ctx_json.as_bytes();
+    let result = unsafe { func(ctx_bytes.as_ptr(), ctx_bytes.len()) };
     assert_eq!(result, 0);
 }
 
