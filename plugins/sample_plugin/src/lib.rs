@@ -21,12 +21,12 @@ pub extern "C" fn run(ctx_ptr: *const u8, ctx_len: usize) -> i32 {
     println!("[SamplePlugin] ctx.output_path: {:?}", ctx.output_path);
     let output_dir = PathBuf::from(&ctx.output_path);
     let output_file = output_dir.join("PLUGIN_TEST");
-    if let Err(e) = fs::create_dir_all(&output_dir) {
-        eprintln!("[SamplePlugin] Failed to create output directory: {}", e);
+    if let Err(_e) = fs::create_dir_all(&output_dir) {
+        eprintln!("[SamplePlugin] Failed to create output directory");
         return 1;
     }
-    if let Err(e) = fs::write(&output_file, "Plugin executed successfully!") {
-        eprintln!("[SamplePlugin] Failed to write output file: {}", e);
+    if let Err(_e) = fs::write(&output_file, "Plugin executed successfully!") {
+        eprintln!("[SamplePlugin] Failed to write output file");
         return 1;
     }
     // Write install_path debug info to a file

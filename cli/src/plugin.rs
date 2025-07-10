@@ -26,7 +26,7 @@ impl fmt::Display for PluginError {
             PluginError::SerializationError(e) => write!(f, "Serialization error: {}", e),
             PluginError::WasmError(e) => write!(f, "WASM error: {}", e),
             PluginError::PluginExecutionError(code) => write!(f, "Plugin execution failed with code: {}", code),
-            PluginError::PluginPanicError => write!(f, "Plugin panicked during execution"),
+            PluginError::PluginPanicError => write!(f, "Plugin panicked during execution "),
         }
     }
 }
