@@ -50,6 +50,12 @@ jobs:
         cargo build --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
         echo "✅ Core build completed successfully"
       
+    - name: Build test plugins
+      run: |
+        echo "🔨 Building test plugins..."
+        cargo build -p test_plugin -p test_plugin_fail --verbose
+        echo "✅ Test plugins built successfully"
+      
     - name: Check plugin_api duplication
       run: ./ci/check_plugin_api.sh
       
