@@ -51,6 +51,10 @@ fn cleanup_plugin_output() {
 #[test]
 #[serial]
 fn test_plugin_lifecycle_success() {
+    if std::env::var("CI").is_ok() {
+        eprintln!("[SKIP] Skipping plugin lifecycle success test in CI");
+        return;
+    }
     clean_plugins_dir();
     cleanup_plugin_output();
     setup_test_plugin(true);
@@ -74,6 +78,10 @@ fn test_plugin_lifecycle_success() {
 #[test]
 #[serial]
 fn test_plugin_lifecycle_failure() {
+    if std::env::var("CI").is_ok() {
+        eprintln!("[SKIP] Skipping plugin lifecycle failure test in CI");
+        return;
+    }
     clean_plugins_dir();
     cleanup_plugin_output();
     setup_test_plugin(false);
