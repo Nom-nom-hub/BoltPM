@@ -223,7 +223,7 @@ fn main() {
                                 };
                                 // Call preinstall plugin hook
                                 if let Err(e) = run_plugins("preinstall", &ctx) {
-                                    error!("Preinstall plugin failed: {}", e);
+                                    error!("Preinstall plugin failed: {e}");
                                     std::process::exit(1);
                                 }
                                 // Extract tarball
@@ -319,7 +319,7 @@ fn main() {
                 env: std::env::vars().collect(),
             };
             if let Err(e) = run_plugins("postinstall", &ctx_post) {
-                error!("Postinstall plugin failed: {}", e);
+                error!("Postinstall plugin failed: {e}");
                 std::process::exit(1);
             }
             if changed {
