@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::slice;
 use std::fs::write;
 
+/// # Safety
+/// This function dereferences raw pointers. The caller must ensure the pointers are valid and the memory is properly aligned and sized.
 #[no_mangle]
 pub unsafe extern "C" fn run(ctx_ptr: *const u8, ctx_len: usize) -> i32 {
     let _ = write("/tmp/plugin_entry.txt", b"entered run()\n");
