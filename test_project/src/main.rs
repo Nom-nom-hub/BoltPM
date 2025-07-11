@@ -48,9 +48,26 @@ mod e2e {
     }
 
     fn copy_plugin_to_project() -> std::io::Result<()> {
-        let plugin_src = Path::new("../target/debug/libsample_plugin.dylib");
+        let (plugin_src, plugin_dest_name) = {
+            #[cfg(target_os = "windows")]
+            {
+                // Try both possible locations
+                let main = Path::new("../target/debug/sample_plugin.dll");
+                let deps = Path::new("../target/debug/deps/sample_plugin.dll");
+                let src = if main.exists() { main } else { deps };
+                (src.to_path_buf(), "sample_plugin.dll")
+            }
+            #[cfg(target_os = "macos")]
+            {
+                (Path::new("../target/debug/libsample_plugin.dylib").to_path_buf(), "libsample_plugin.dylib")
+            }
+            #[cfg(target_os = "linux")]
+            {
+                (Path::new("../target/debug/libsample_plugin.so").to_path_buf(), "libsample_plugin.so")
+            }
+        };
         let plugin_dest_dir = Path::new("temp_project/.boltpm/plugins");
-        let plugin_dest = plugin_dest_dir.join("libsample_plugin.dylib");
+        let plugin_dest = plugin_dest_dir.join(plugin_dest_name);
         fs::create_dir_all(plugin_dest_dir)?;
         fs::copy(plugin_src, plugin_dest)?;
         Ok(())
