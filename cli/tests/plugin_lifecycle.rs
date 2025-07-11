@@ -1,10 +1,13 @@
+use serial_test::serial;
+use std::env;
 use std::fs;
 use std::process::Command;
-use std::env;
-use serial_test::serial;
 
 fn workspace_path(rel: &str) -> std::path::PathBuf {
-    std::env::var("CARGO_MANIFEST_DIR").map(std::path::PathBuf::from).unwrap_or_else(|_| std::path::PathBuf::from(".")).join(rel)
+    std::env::var("CARGO_MANIFEST_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::path::PathBuf::from("."))
+        .join(rel)
 }
 
 fn clean_plugins_dir() {
@@ -37,7 +40,10 @@ fn setup_test_plugin(success: bool) {
             if success {
                 ("../target/debug/libtest_plugin.dylib", "test_plugin.dylib")
             } else {
-                ("../target/debug/libtest_plugin_fail.dylib", "test_plugin.dylib")
+                (
+                    "../target/debug/libtest_plugin_fail.dylib",
+                    "test_plugin.dylib",
+                )
             }
         }
         #[cfg(target_os = "linux")]
@@ -51,7 +57,11 @@ fn setup_test_plugin(success: bool) {
     };
     println!("[DEBUG] Copying plugin from: {}", src);
     fs::create_dir_all(&plugins_dir).unwrap();
-    fs::copy(src, plugins_dir.join(dest_name)).expect(&format!("Failed to copy plugin from {} to {}", src, plugins_dir.join(dest_name).display()));
+    fs::copy(src, plugins_dir.join(dest_name)).expect(&format!(
+        "Failed to copy plugin from {} to {}",
+        src,
+        plugins_dir.join(dest_name).display()
+    ));
     // Print plugins after copy for debug
     if let Ok(entries) = fs::read_dir(&plugins_dir) {
         println!("[DEBUG] Plugins after setup:");
@@ -76,18 +86,32 @@ fn test_plugin_lifecycle_success() {
     cleanup_plugin_output();
     setup_test_plugin(true);
     // Print working directory and env for debug
-    println!("[TEST DEBUG] CWD: {}", env::current_dir().unwrap().display());
+    println!(
+        "[TEST DEBUG] CWD: {}",
+        env::current_dir().unwrap().display()
+    );
     for (k, v) in env::vars() {
         println!("[TEST DEBUG] ENV {}={}", k, v);
     }
-    fs::write("package.json", r#"{"name":"boltpm-demo","version":"1.0.0"}"#).unwrap();
+    fs::write(
+        "package.json",
+        r#"{"name":"boltpm-demo","version":"1.0.0"}"#,
+    )
+    .unwrap();
     let output = Command::new("cargo")
         .args(["run", "--bin", "boltpm", "--", "install"])
         .output()
         .expect("Failed to run boltpm install");
-    assert!(output.status.success(), "CLI install failed: {} {}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
-    let pre = fs::read_to_string(workspace_path(".boltpm/plugins_output/preinstall")).expect("preinstall output missing");
-    let post = fs::read_to_string(workspace_path(".boltpm/plugins_output/postinstall")).expect("postinstall output missing");
+    assert!(
+        output.status.success(),
+        "CLI install failed: {} {}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let pre = fs::read_to_string(workspace_path(".boltpm/plugins_output/preinstall"))
+        .expect("preinstall output missing");
+    let post = fs::read_to_string(workspace_path(".boltpm/plugins_output/postinstall"))
+        .expect("postinstall output missing");
     assert!(pre.contains("plugin ran for preinstall"));
     assert!(post.contains("plugin ran for postinstall"));
 }
@@ -100,7 +124,10 @@ fn test_plugin_lifecycle_failure() {
     cleanup_plugin_output();
     setup_test_plugin(false);
     // Print working directory and env for debug
-    println!("[TEST DEBUG] CWD: {}", env::current_dir().unwrap().display());
+    println!(
+        "[TEST DEBUG] CWD: {}",
+        env::current_dir().unwrap().display()
+    );
     for (k, v) in env::vars() {
         println!("[TEST DEBUG] ENV {}={}", k, v);
     }
@@ -112,15 +139,28 @@ fn test_plugin_lifecycle_failure() {
             println!("[TEST DEBUG] - {:?}", entry.path());
         }
     } else {
-        println!("[TEST DEBUG] Plugins directory does not exist: {}", plugins_dir.display());
+        println!(
+            "[TEST DEBUG] Plugins directory does not exist: {}",
+            plugins_dir.display()
+        );
     }
-    fs::write("package.json", r#"{"name":"boltpm-demo","version":"1.0.0"}"#).unwrap();
+    fs::write(
+        "package.json",
+        r#"{"name":"boltpm-demo","version":"1.0.0"}"#,
+    )
+    .unwrap();
     let output = Command::new("cargo")
         .args(["run", "--bin", "boltpm", "--", "install"])
         .output()
         .expect("Failed to run boltpm install");
     // Should fail due to plugin error
-    assert!(!output.status.success(), "CLI install should fail due to plugin error");
+    assert!(
+        !output.status.success(),
+        "CLI install should fail due to plugin error"
+    );
     let pre = fs::read_to_string(workspace_path(".boltpm/plugins_output/preinstall"));
-    assert!(pre.is_err() || !pre.unwrap().contains("plugin ran for preinstall"), "preinstall output should not exist or be incomplete");
-} 
+    assert!(
+        pre.is_err() || !pre.unwrap().contains("plugin ran for preinstall"),
+        "preinstall output should not exist or be incomplete"
+    );
+}

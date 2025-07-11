@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use std::fs;
 use std::path::Path;
 
@@ -28,11 +28,14 @@ mod tests {
     #[test]
     fn test_lockfile_serialization() {
         let mut deps = HashMap::new();
-        deps.insert("lodash".into(), LockDependency {
-            version: "4.17.21".into(),
-            resolved: "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz".into(),
-            integrity: None,
-        });
+        deps.insert(
+            "lodash".into(),
+            LockDependency {
+                version: "4.17.21".into(),
+                resolved: "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz".into(),
+                integrity: None,
+            },
+        );
         let lock = BoltLock {
             name: "test-app".into(),
             dependencies: deps,
@@ -41,4 +44,4 @@ mod tests {
         write_lockfile(tmp_dir.path(), &lock).unwrap();
         assert!(tmp_dir.path().join("bolt.lock").exists());
     }
-} 
+}

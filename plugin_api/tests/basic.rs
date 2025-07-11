@@ -13,4 +13,4 @@ fn test_plugin_context_fields() {
     assert_eq!(ctx.package_name, "testpkg");
     assert_eq!(ctx.package_version, "0.1.0");
     assert_eq!(ctx.install_path, "/tmp/testpkg");
-} 
+}

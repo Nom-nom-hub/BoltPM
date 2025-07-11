@@ -1,12 +1,12 @@
 use clap::{Parser, Subcommand};
-use std::fs;
 use serde::{Deserialize, Serialize};
+use std::fs;
 mod lockfile;
 use std::path::Path;
 mod plugin;
 use crate::plugin::run_plugins;
-use plugin_api::PluginContext;
 use log::{error, info};
+use plugin_api::PluginContext;
 
 #[derive(Parser)]
 #[command(name = "boltpm")]
@@ -93,14 +93,13 @@ fn main() {
     let cli = Cli::parse();
 
     // Initialize logging after parsing CLI arguments, using CLI log_level as default
-    let env = env_logger::Env::default()
-        .default_filter_or(&cli.log_level);
+    let env = env_logger::Env::default().default_filter_or(&cli.log_level);
     env_logger::init_from_env(env);
 
     // Logging is initialized above using env_logger and the CLI log_level as default.
 
     info!("BoltPM starting up");
-    
+
     match cli.command {
         Commands::Init => {
             info!("Initializing new BoltPM project...");
@@ -128,7 +127,10 @@ fn main() {
                 hook: "preinstall".to_string(),
                 package_name: pj.name.clone(),
                 package_version: pj.version.clone(),
-                install_path: std::env::current_dir().unwrap().to_string_lossy().to_string(),
+                install_path: std::env::current_dir()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
                 env: std::env::vars().collect(),
             };
             // Always run preinstall plugins, even if no dependencies or fetch fails
@@ -170,7 +172,10 @@ fn main() {
                     hook: "preinstall".to_string(),
                     package_name: pkg.to_string(),
                     package_version: "unknown".to_string(),
-                    install_path: std::env::current_dir().unwrap().to_string_lossy().to_string(),
+                    install_path: std::env::current_dir()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
                     env: std::env::vars().collect(),
                 };
                 // Run preinstall plugins for this package
@@ -180,7 +185,10 @@ fn main() {
                 }
                 // If already in lockfile, use pinned version
                 if let Some(entry) = lock.packages.get(pkg) {
-                    info!("Using {pkg}@{version} from lockfile", version=entry.version);
+                    info!(
+                        "Using {pkg}@{version} from lockfile",
+                        version = entry.version
+                    );
                     // Run postinstall plugins for this package
                     let ctx_post = PluginContext {
                         hook: "postinstall".to_string(),
@@ -240,11 +248,16 @@ fn main() {
                                 let extracted_pj = format!("{cache_dir}/package.json");
                                 let mut dependencies = std::collections::BTreeMap::new();
                                 if let Ok(dep_pj_str) = fs::read_to_string(&extracted_pj) {
-                                    if let Ok(dep_pj) = serde_json::from_str::<PackageJson>(&dep_pj_str) {
+                                    if let Ok(dep_pj) =
+                                        serde_json::from_str::<PackageJson>(&dep_pj_str)
+                                    {
                                         if let Some(deps) = dep_pj.dependencies {
                                             if let Some(map) = deps.as_object() {
                                                 for (dep, ver) in map {
-                                                    dependencies.insert(dep.clone(), ver.as_str().unwrap_or("").to_string());
+                                                    dependencies.insert(
+                                                        dep.clone(),
+                                                        ver.as_str().unwrap_or("").to_string(),
+                                                    );
                                                     install_pkg(dep, lock, changed);
                                                 }
                                             }
@@ -252,11 +265,18 @@ fn main() {
                                     }
                                 }
                                 // Update lockfile
-                                lock.packages.insert(pkg.to_string(), BoltLockEntry {
-                                    version: latest.to_string(),
-                                    resolved: tarball_url.clone(),
-                                    dependencies: if dependencies.is_empty() { None } else { Some(dependencies) },
-                                });
+                                lock.packages.insert(
+                                    pkg.to_string(),
+                                    BoltLockEntry {
+                                        version: latest.to_string(),
+                                        resolved: tarball_url.clone(),
+                                        dependencies: if dependencies.is_empty() {
+                                            None
+                                        } else {
+                                            Some(dependencies)
+                                        },
+                                    },
+                                );
                                 *changed = true;
                                 // Call postinstall plugin hook
                                 if let Err(e) = run_plugins("postinstall", &ctx) {
@@ -265,18 +285,23 @@ fn main() {
                                 }
                                 info!("Install complete: {pkg}@{latest}");
                             } else {
-                                error!("Failed to download tarball: {status}", status=tarball_resp.status());
+                                error!(
+                                    "Failed to download tarball: {status}",
+                                    status = tarball_resp.status()
+                                );
                                 let ctx = PluginContext {
                                     hook: "preinstall".to_string(),
                                     package_name: pkg.to_string(),
                                     package_version: "unknown".to_string(),
-                                    install_path: std::path::PathBuf::from("").to_string_lossy().to_string(),
+                                    install_path: std::path::PathBuf::from("")
+                                        .to_string_lossy()
+                                        .to_string(),
                                     env: std::env::vars().collect(),
                                 };
                                 let _ = run_plugins("onError", &ctx);
                             }
                         } else {
-                            error!("Failed to fetch metadata: {status}", status=resp.status());
+                            error!("Failed to fetch metadata: {status}", status = resp.status());
                         }
                     }
                     Err(e) => {
@@ -288,7 +313,10 @@ fn main() {
                     hook: "postinstall".to_string(),
                     package_name: pkg.to_string(),
                     package_version: "unknown".to_string(),
-                    install_path: std::env::current_dir().unwrap().to_string_lossy().to_string(),
+                    install_path: std::env::current_dir()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
                     env: std::env::vars().collect(),
                 };
                 if let Err(e) = run_plugins("postinstall", &ctx_post) {
@@ -315,7 +343,10 @@ fn main() {
                 hook: "postinstall".to_string(),
                 package_name: pj.name.clone(),
                 package_version: pj.version.clone(),
-                install_path: std::env::current_dir().unwrap().to_string_lossy().to_string(),
+                install_path: std::env::current_dir()
+                    .unwrap()
+                    .to_string_lossy()
+                    .to_string(),
                 env: std::env::vars().collect(),
             };
             if let Err(e) = run_plugins("postinstall", &ctx_post) {
@@ -399,38 +430,55 @@ fn main() {
                                 let extracted_pj = format!("{cache_dir}/package.json");
                                 let mut dependencies = std::collections::BTreeMap::new();
                                 if let Ok(dep_pj_str) = fs::read_to_string(&extracted_pj) {
-                                    if let Ok(dep_pj) = serde_json::from_str::<PackageJson>(&dep_pj_str) {
+                                    if let Ok(dep_pj) =
+                                        serde_json::from_str::<PackageJson>(&dep_pj_str)
+                                    {
                                         if let Some(deps) = dep_pj.dependencies {
                                             if let Some(map) = deps.as_object() {
                                                 for (dep, ver) in map {
-                                                    dependencies.insert(dep.clone(), ver.as_str().unwrap_or("").to_string());
+                                                    dependencies.insert(
+                                                        dep.clone(),
+                                                        ver.as_str().unwrap_or("").to_string(),
+                                                    );
                                                     update_pkg(dep, lock, changed);
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                lock.packages.insert(pkg.to_string(), BoltLockEntry {
-                                    version: latest.to_string(),
-                                    resolved: tarball_url.clone(),
-                                    dependencies: if dependencies.is_empty() { None } else { Some(dependencies) },
-                                });
+                                lock.packages.insert(
+                                    pkg.to_string(),
+                                    BoltLockEntry {
+                                        version: latest.to_string(),
+                                        resolved: tarball_url.clone(),
+                                        dependencies: if dependencies.is_empty() {
+                                            None
+                                        } else {
+                                            Some(dependencies)
+                                        },
+                                    },
+                                );
                                 *changed = true;
                                 let _ = run_plugins("postinstall", &ctx);
                                 info!("Update complete: {pkg}@{latest}");
                             } else {
-                                error!("Failed to download tarball: {status}", status=tarball_resp.status());
+                                error!(
+                                    "Failed to download tarball: {status}",
+                                    status = tarball_resp.status()
+                                );
                                 let ctx = PluginContext {
                                     hook: "preinstall".to_string(),
                                     package_name: pkg.to_string(),
                                     package_version: latest.to_string(),
-                                    install_path: std::path::PathBuf::from("").to_string_lossy().to_string(),
+                                    install_path: std::path::PathBuf::from("")
+                                        .to_string_lossy()
+                                        .to_string(),
                                     env: std::env::vars().collect(),
                                 };
                                 let _ = run_plugins("onError", &ctx);
                             }
                         } else {
-                            error!("Failed to fetch metadata: {status}", status=resp.status());
+                            error!("Failed to fetch metadata: {status}", status = resp.status());
                         }
                     }
                     Err(e) => {
@@ -483,17 +531,27 @@ fn main() {
                 Err(e) => println!("Error: {e}"),
             }
         }
-        Commands::Deprecate { package, version, message } => {
+        Commands::Deprecate {
+            package,
+            version,
+            message,
+        } => {
             let url = format!("http://localhost:4000/v1/{package}/{version}/deprecate");
             let body = serde_json::json!({ "message": message });
-            let resp = reqwest::blocking::Client::new().post(&url).json(&body).send();
+            let resp = reqwest::blocking::Client::new()
+                .post(&url)
+                .json(&body)
+                .send();
             match resp {
                 Ok(r) => println!("{}", r.text().unwrap()),
                 Err(e) => println!("Error: {e}"),
             }
         }
         Commands::Search { query } => {
-            let url = format!("http://localhost:4000/v1/search?q={}", urlencoding::encode(&query));
+            let url = format!(
+                "http://localhost:4000/v1/search?q={}",
+                urlencoding::encode(&query)
+            );
             let resp = reqwest::blocking::get(&url);
             match resp {
                 Ok(r) => {
@@ -506,15 +564,19 @@ fn main() {
         Commands::Lock => {
             // Read package.json (for now, just get the name)
             let pj_str = fs::read_to_string("package.json").expect("No package.json found");
-            let pj: serde_json::Value = serde_json::from_str(&pj_str).expect("Invalid package.json");
+            let pj: serde_json::Value =
+                serde_json::from_str(&pj_str).expect("Invalid package.json");
             let name = pj["name"].as_str().unwrap_or("bolt-app").to_string();
             // Hardcode a dependency for demonstration
             let mut deps = std::collections::HashMap::new();
-            deps.insert("lodash".to_string(), lockfile::LockDependency {
-                version: "4.17.21".to_string(),
-                resolved: "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz".to_string(),
-                integrity: None,
-            });
+            deps.insert(
+                "lodash".to_string(),
+                lockfile::LockDependency {
+                    version: "4.17.21".to_string(),
+                    resolved: "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz".to_string(),
+                    integrity: None,
+                },
+            );
             let lock = lockfile::BoltLock {
                 name,
                 dependencies: deps,
@@ -523,4 +585,4 @@ fn main() {
             println!("bolt.lock generated.");
         }
     }
-} 
+}

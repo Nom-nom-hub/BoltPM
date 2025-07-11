@@ -4,13 +4,13 @@ fn main() {
 
 #[cfg(test)]
 mod e2e {
-    use std::process::Command;
-    use std::io::Read;
-    use tempfile::NamedTempFile;
-    use std::net::TcpListener;
     use std::fs::File;
-    use std::{fs, path::Path};
+    use std::io::Read;
+    use std::net::TcpListener;
     use std::path::PathBuf;
+    use std::process::Command;
+    use std::{fs, path::Path};
+    use tempfile::NamedTempFile;
 
     fn port_in_use(port: u16) -> bool {
         TcpListener::bind(("127.0.0.1", port)).is_err()
@@ -36,13 +36,18 @@ mod e2e {
         let timeout = std::time::Duration::from_secs(60);
         while start.elapsed() < timeout {
             if let Ok(resp) = reqwest::blocking::get("http://localhost:4000/v1/index") {
-                if resp.status().is_success() { return child; }
+                if resp.status().is_success() {
+                    return child;
+                }
             }
             std::thread::sleep(std::time::Duration::from_millis(300));
         }
         // If failed, print captured logs
         let mut logs = String::new();
-        File::open(&log_path).unwrap().read_to_string(&mut logs).ok();
+        File::open(&log_path)
+            .unwrap()
+            .read_to_string(&mut logs)
+            .ok();
         eprintln!("Registry did not start in time. Captured logs:\n{}", logs);
         child
     }
@@ -59,11 +64,17 @@ mod e2e {
             }
             #[cfg(target_os = "macos")]
             {
-                (Path::new("../target/debug/libsample_plugin.dylib").to_path_buf(), "libsample_plugin.dylib")
+                (
+                    Path::new("../target/debug/libsample_plugin.dylib").to_path_buf(),
+                    "libsample_plugin.dylib",
+                )
             }
             #[cfg(target_os = "linux")]
             {
-                (Path::new("../target/debug/libsample_plugin.so").to_path_buf(), "libsample_plugin.so")
+                (
+                    Path::new("../target/debug/libsample_plugin.so").to_path_buf(),
+                    "libsample_plugin.so",
+                )
             }
         };
         let plugin_dest_dir = Path::new("temp_project/.boltpm/plugins");
@@ -85,9 +96,16 @@ mod e2e {
         let form = reqwest::blocking::multipart::Form::new()
             .text("version", version)
             .text("description", desc)
-            .part("tarball", reqwest::blocking::multipart::Part::bytes(tarball_bytes.to_vec()).file_name("package.tgz"));
+            .part(
+                "tarball",
+                reqwest::blocking::multipart::Part::bytes(tarball_bytes.to_vec())
+                    .file_name("package.tgz"),
+            );
         let publish_url = format!("http://localhost:4000/v1/{}/", pkg_name);
-        let resp = reqwest::blocking::Client::new().put(&publish_url).multipart(form).send();
+        let resp = reqwest::blocking::Client::new()
+            .put(&publish_url)
+            .multipart(form)
+            .send();
         assert!(resp.is_ok(), "Publish failed: {:?}", resp);
         // Yank the package
         let yank_url = format!("http://localhost:4000/v1/{}/{}/yank", pkg_name, version);
@@ -98,7 +116,10 @@ mod e2e {
         let resp = reqwest::blocking::Client::new().post(&unyank_url).send();
         assert!(resp.is_ok(), "Unyank failed: {:?}", resp);
         // Deprecate the package
-        let deprecate_url = format!("http://localhost:4000/v1/{}/{}/deprecate", pkg_name, version);
+        let deprecate_url = format!(
+            "http://localhost:4000/v1/{}/{}/deprecate",
+            pkg_name, version
+        );
         let body = serde_json::json!({ "message": "Deprecated for test" });
         let resp = reqwest::blocking::Client::new()
             .post(&deprecate_url)
@@ -117,10 +138,14 @@ mod e2e {
         let temp_project_dir = "temp_project";
         let temp_package_json = format!("{}/package.json", temp_project_dir);
         std::fs::create_dir_all(temp_project_dir).expect("Failed to create temp_project dir");
-        std::fs::write(&temp_package_json, r#"{
+        std::fs::write(
+            &temp_package_json,
+            r#"{
   "name": "test-project",
   "version": "1.0.0"
-}"#).expect("Failed to write temp package.json");
+}"#,
+        )
+        .expect("Failed to write temp package.json");
         // Copy plugin binary into temp_project/.boltpm/plugins
         copy_plugin_to_project().expect("Failed to copy plugin binary");
         // Install the package using CLI from temp_project
@@ -150,7 +175,7 @@ mod e2e {
                             println!("  {}", entry.path().display());
                         }
                     }
-                },
+                }
                 Err(e) => println!("  [E2E] Failed to read dir: {}", e),
             }
         }
@@ -158,8 +183,12 @@ mod e2e {
         print_dir_contents("../.boltpm");
         print_dir_contents("../.boltpm/plugins_output");
         // Check for plugin output file immediately after CLI install
-        let output_file = PathBuf::from(temp_project_dir).join(".boltpm/plugins_output/PLUGIN_TEST");
-        println!("[Test] Checking for plugin output at: {}", output_file.display());
+        let output_file =
+            PathBuf::from(temp_project_dir).join(".boltpm/plugins_output/PLUGIN_TEST");
+        println!(
+            "[Test] Checking for plugin output at: {}",
+            output_file.display()
+        );
         if output_file.exists() {
             println!("[Test] Plugin output file found!");
         } else {
@@ -179,7 +208,10 @@ mod e2e {
         // Plugin verification: check for plugin output file
         let plugin_output = fs::read_to_string(output_file);
         assert!(plugin_output.is_ok(), "Plugin output file not found");
-        assert!(plugin_output.unwrap().contains("plugin ran"), "Plugin did not run as expected");
+        assert!(
+            plugin_output.unwrap().contains("plugin ran"),
+            "Plugin did not run as expected"
+        );
         // Migration script verification
         let scripts = ["npm_to_boltpm.js", "yarn_to_boltpm.js", "pnpm_to_boltpm.js"];
         let workspace_root = std::env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -193,7 +225,11 @@ mod e2e {
             assert!(status.success(), "Migration script {} failed", script);
             let lock = fs::read_to_string("../bolt.lock");
             assert!(lock.is_ok(), "bolt.lock not created by {}", script);
-            assert!(lock.unwrap().contains("bolt"), "bolt.lock missing expected content after {}", script);
+            assert!(
+                lock.unwrap().contains("bolt"),
+                "bolt.lock missing expected content after {}",
+                script
+            );
         }
         // Clean up temp_project directory
         std::fs::remove_dir_all(temp_project_dir).ok();

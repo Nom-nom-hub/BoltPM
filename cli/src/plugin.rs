@@ -1,9 +1,9 @@
+use libloading::{Library, Symbol};
+use log::{debug, error, info};
+use plugin_api::PluginContext;
+use std::fmt;
 use std::fs;
 use std::path::Path;
-use std::fmt;
-use libloading::{Library, Symbol};
-use plugin_api::PluginContext;
-use log::{debug, error, info};
 
 #[derive(Debug)]
 pub enum PluginError {
@@ -47,29 +47,36 @@ impl From<serde_json::Error> for PluginError {
 impl std::error::Error for PluginError {}
 
 pub fn run_plugins(_hook: &str, ctx: &PluginContext) -> Result<(), PluginError> {
-    let cwd = std::env::current_dir()
-        .map_err(|e| PluginError::Io(std::io::Error::other(
-            format!("Failed to get current working directory: {e}")
-        )))?;
+    let cwd = std::env::current_dir().map_err(|e| {
+        PluginError::Io(std::io::Error::other(format!(
+            "Failed to get current working directory: {e}"
+        )))
+    })?;
     let plugins_dir = cwd.join(".boltpm/plugins");
     debug!("Searching for plugins in: {}", plugins_dir.display());
-    
+
     if !plugins_dir.exists() {
-        debug!("Plugins directory does not exist: {}", plugins_dir.display());
+        debug!(
+            "Plugins directory does not exist: {}",
+            plugins_dir.display()
+        );
         return Ok(()); // No plugins to run
     }
-    
+
     let entries = fs::read_dir(&plugins_dir)?;
     for entry in entries {
         let entry = entry?;
         let path = entry.path();
         debug!("Found file: {}", path.display());
-        
+
         if is_plugin_file(&path) {
             debug!("Attempting to load plugin: {}", path.display());
             load_and_run_plugin(&path, ctx)?;
         } else {
-            debug!("Skipping file with unsupported extension: {}", path.display());
+            debug!(
+                "Skipping file with unsupported extension: {}",
+                path.display()
+            );
         }
     }
     Ok(())
@@ -91,21 +98,20 @@ fn load_and_run_plugin(path: &Path, ctx: &PluginContext) -> Result<(), PluginErr
     // Serialize context to JSON bytes for FFI-safe passing
     let ctx_json = serde_json::to_string(ctx)?;
     let ctx_bytes = ctx_json.as_bytes();
-    
+
     unsafe {
         let lib = Library::new(path)?;
-        let func: Result<Symbol<unsafe extern "C" fn(*const u8, usize) -> i32>, _> = lib.get(b"run");
-        
+        let func: Result<Symbol<unsafe extern "C" fn(*const u8, usize) -> i32>, _> =
+            lib.get(b"run");
+
         match func {
             Ok(func) => {
                 use std::panic;
 
-                // Note: catch_unwind only catches Rust panics, not segmentation faults 
-                // or aborts from FFI code. For untrusted plugins, consider isolating 
+                // Note: catch_unwind only catches Rust panics, not segmentation faults
+                // or aborts from FFI code. For untrusted plugins, consider isolating
                 // them in a subprocess for better security.
-                let call_result = panic::catch_unwind(|| {
-                    func(ctx_bytes.as_ptr(), ctx_bytes.len())
-                });
+                let call_result = panic::catch_unwind(|| func(ctx_bytes.as_ptr(), ctx_bytes.len()));
 
                 match call_result {
                     Ok(result) => {
@@ -122,10 +128,14 @@ fn load_and_run_plugin(path: &Path, ctx: &PluginContext) -> Result<(), PluginErr
                 }
             }
             Err(e) => {
-                error!("Failed to load 'run' function from {}: {}", path.display(), e);
+                error!(
+                    "Failed to load 'run' function from {}: {}",
+                    path.display(),
+                    e
+                );
                 return Err(PluginError::Loading(e));
             }
         }
     }
     Ok(())
-} 
+}

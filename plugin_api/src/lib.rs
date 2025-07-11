@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -10,4 +10,4 @@ pub struct PluginContext {
     pub env: HashMap<String, String>,
 }
 
-pub type PluginResult = Result<(), String>; 
+pub type PluginResult = Result<(), String>;

@@ -9,12 +9,15 @@ fn test_sample_plugin_builds() {
 #[test]
 #[ignore]
 fn test_sample_plugin_run() {
-    use std::path::PathBuf;
     use libloading::{Library, Symbol};
-    use std::env;
     use serde_json;
+    use std::env;
+    use std::path::PathBuf;
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let workspace_root = manifest_dir.join("../../").canonicalize().expect("Failed to canonicalize workspace root");
+    let workspace_root = manifest_dir
+        .join("../../")
+        .canonicalize()
+        .expect("Failed to canonicalize workspace root");
     let candidates = [
         workspace_root.join("target/debug/libsample_plugin.dylib"),
         workspace_root.join("target/debug/deps/libsample_plugin.dylib"),
@@ -32,7 +35,8 @@ fn test_sample_plugin_run() {
             panic!("Could not find libsample_plugin.dylib in any known location. Current working directory: {}. Tried: {:?}", cwd.display(), candidates);
         }
     };
-    let func: Symbol<unsafe extern "C" fn(*const u8, usize) -> i32> = unsafe { lib.get(b"run").unwrap() };
+    let func: Symbol<unsafe extern "C" fn(*const u8, usize) -> i32> =
+        unsafe { lib.get(b"run").unwrap() };
     let ctx = PluginContext {
         hook: "testhook".to_string(),
         package_name: "sample".to_string(),
@@ -59,4 +63,4 @@ fn test_plugin_context_fields() {
     assert_eq!(ctx.package_name, "sample");
     assert_eq!(ctx.package_version, "1.2.3");
     assert_eq!(ctx.install_path, "/tmp/sample");
-} 
+}

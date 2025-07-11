@@ -1,12 +1,19 @@
-use axum::{routing::{get, put, post}, Router, extract::{Path, Json, Multipart}, response::{IntoResponse, Response}, http::StatusCode, body::Body};
+use axum::{
+    body::Body,
+    extract::{Json, Multipart, Path},
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::{get, post, put},
+    Router,
+};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
-use tower_http::cors::CorsLayer;
 use std::fs;
-use std::path::Path as FsPath;
 use std::net::SocketAddr;
+use std::path::Path as FsPath;
+use std::sync::{Arc, Mutex};
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct VersionMeta {
@@ -30,20 +37,30 @@ fn migrate_meta(meta_raw: HashMap<String, PackageMeta>) -> HashMap<String, Packa
     for (pkg_name, pkg) in meta_raw {
         let mut new_versions = HashMap::new();
         // Deserialize versions as Value for migration
-        let versions_val: HashMap<String, Value> = serde_json::from_value(serde_json::to_value(pkg.versions).unwrap()).unwrap();
+        let versions_val: HashMap<String, Value> =
+            serde_json::from_value(serde_json::to_value(pkg.versions).unwrap()).unwrap();
         for (ver, val) in versions_val {
             if let Value::String(desc) = val {
-                new_versions.insert(ver, VersionMeta {
-                    description: desc,
-                    yanked: false,
-                    deprecated: false,
-                    deprecation_message: None,
-                });
+                new_versions.insert(
+                    ver,
+                    VersionMeta {
+                        description: desc,
+                        yanked: false,
+                        deprecated: false,
+                        deprecation_message: None,
+                    },
+                );
             } else if let Ok(vm) = serde_json::from_value::<VersionMeta>(val) {
                 new_versions.insert(ver, vm);
             }
         }
-        new_meta.insert(pkg_name, PackageMeta { name: pkg.name, versions: new_versions });
+        new_meta.insert(
+            pkg_name,
+            PackageMeta {
+                name: pkg.name,
+                versions: new_versions,
+            },
+        );
     }
     new_meta
 }
@@ -105,14 +122,20 @@ async fn publish_package(
         name: pkg.clone(),
         versions: HashMap::new(),
     });
-    entry.versions.insert(version.clone(), VersionMeta {
-        description: desc.clone(),
-        yanked: false,
-        deprecated: false,
-        deprecation_message: None,
-    });
+    entry.versions.insert(
+        version.clone(),
+        VersionMeta {
+            description: desc.clone(),
+            yanked: false,
+            deprecated: false,
+            deprecation_message: None,
+        },
+    );
     fs::write(meta_path, serde_json::to_vec_pretty(&meta).unwrap()).ok();
-    (StatusCode::OK, format!("Published package: {}@{}", pkg, version))
+    (
+        StatusCode::OK,
+        format!("Published package: {}@{}", pkg, version),
+    )
 }
 
 async fn get_metadata(Path(pkg): Path<String>) -> impl IntoResponse {
@@ -124,7 +147,10 @@ async fn get_metadata(Path(pkg): Path<String>) -> impl IntoResponse {
     let meta: HashMap<String, PackageMeta> = serde_json::from_slice(&raw).unwrap();
     let meta = migrate_meta(meta);
     if let Some(pkg_meta) = meta.get(&pkg) {
-        (StatusCode::OK, serde_json::to_string_pretty(pkg_meta).unwrap())
+        (
+            StatusCode::OK,
+            serde_json::to_string_pretty(pkg_meta).unwrap(),
+        )
     } else {
         (StatusCode::NOT_FOUND, "Package not found".to_string())
     }
@@ -170,7 +196,10 @@ async fn yank_version(Path((pkg, version)): Path<(String, String)>) -> impl Into
             return (StatusCode::OK, format!("Yanked {}@{}", pkg, version));
         }
     }
-    (StatusCode::NOT_FOUND, "Package/version not found".to_string())
+    (
+        StatusCode::NOT_FOUND,
+        "Package/version not found".to_string(),
+    )
 }
 
 async fn unyank_version(Path((pkg, version)): Path<(String, String)>) -> impl IntoResponse {
@@ -187,7 +216,10 @@ async fn unyank_version(Path((pkg, version)): Path<(String, String)>) -> impl In
             return (StatusCode::OK, format!("Unyanked {}@{}", pkg, version));
         }
     }
-    (StatusCode::NOT_FOUND, "Package/version not found".to_string())
+    (
+        StatusCode::NOT_FOUND,
+        "Package/version not found".to_string(),
+    )
 }
 
 #[derive(Deserialize)]
@@ -213,11 +245,19 @@ async fn deprecate_version(
             return (StatusCode::OK, format!("Deprecated {}@{}", pkg, version));
         }
     }
-    (StatusCode::NOT_FOUND, "Package/version not found".to_string())
+    (
+        StatusCode::NOT_FOUND,
+        "Package/version not found".to_string(),
+    )
 }
 
-async fn search_packages(axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>) -> impl IntoResponse {
-    let q = params.get("q").map(|s| s.to_lowercase()).unwrap_or_default();
+async fn search_packages(
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    let q = params
+        .get("q")
+        .map(|s| s.to_lowercase())
+        .unwrap_or_default();
     let meta_path = FsPath::new("packages/packages.json");
     if !meta_path.exists() {
         return (StatusCode::OK, "[]".to_string());
@@ -228,10 +268,16 @@ async fn search_packages(axum::extract::Query(params): axum::extract::Query<Hash
     let mut results = vec![];
     for pkg in meta.values() {
         if pkg.name.to_lowercase().contains(&q)
-            || pkg.versions.values().any(|v| v.description.to_lowercase().contains(&q))
+            || pkg
+                .versions
+                .values()
+                .any(|v| v.description.to_lowercase().contains(&q))
         {
             results.push(pkg);
         }
     }
-    (StatusCode::OK, serde_json::to_string_pretty(&results).unwrap())
-} 
+    (
+        StatusCode::OK,
+        serde_json::to_string_pretty(&results).unwrap(),
+    )
+}
