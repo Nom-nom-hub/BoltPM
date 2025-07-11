@@ -1,6 +1,3 @@
-use std::fs;
-use std::path::PathBuf;
-
 /// # Safety
 /// This function dereferences raw pointers. The caller must ensure the pointers are valid and the memory is properly aligned and sized.
 #[no_mangle]
