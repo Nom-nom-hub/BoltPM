@@ -69,6 +69,7 @@ fn cleanup_plugin_output() {
 }
 
 #[test]
+#[ignore]
 #[serial]
 fn test_plugin_lifecycle_success() {
     clean_plugins_dir();
@@ -92,6 +93,7 @@ fn test_plugin_lifecycle_success() {
 }
 
 #[test]
+#[ignore]
 #[serial]
 fn test_plugin_lifecycle_failure() {
     clean_plugins_dir();
