@@ -24,12 +24,12 @@ pub extern "C" fn run(ctx_json: *const u8, ctx_len: usize) -> i32 {
     println!("[TestPlugin] Hook: {} | Package: {}", hook, pkg);
     let output_dir = PathBuf::from(".boltpm/plugins_output");
     if let Err(e) = fs::create_dir_all(&output_dir) {
-        eprintln!("[TestPlugin] Failed to create output directory: {}", e);
+        let _ = fs::write("/tmp/boltpm_plugin_error.txt", format!("Failed to create output dir: {}", e));
         return 1;
     }
-    let output_file = output_dir.join(hook);
+    let output_file = output_dir.join("PLUGIN_TEST");
     if let Err(e) = fs::write(&output_file, format!("plugin ran for {}", hook)) {
-        eprintln!("[TestPlugin] Failed to write plugin output file: {}", e);
+        let _ = fs::write("/tmp/boltpm_plugin_error.txt", format!("Failed to write output file: {}", e));
         return 1;
     }
     0
