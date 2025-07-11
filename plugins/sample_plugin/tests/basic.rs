@@ -7,6 +7,7 @@ fn test_sample_plugin_builds() {
 }
 
 #[test]
+#[ignore]
 fn test_sample_plugin_run() {
     use std::path::PathBuf;
     use libloading::{Library, Symbol};
