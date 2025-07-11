@@ -116,11 +116,11 @@ fn main() {
             info!("Project initialized successfully");
         }
         Commands::Install { package } => {
-            info!("Installing package: {:?}", package);
+            info!("Installing package: {package:?}");
             // Parse package.json
             let pj_str = fs::read_to_string("package.json").expect("No package.json found");
             let pj: PackageJson = serde_json::from_str(&pj_str).expect("Invalid package.json");
-            info!("Parsed package.json: {:?}", pj);
+            info!("Parsed package.json: {pj:?}");
             let mut lock = read_lockfile();
             let mut changed = false;
             // Plugin context setup
@@ -133,7 +133,7 @@ fn main() {
             };
             // Always run preinstall plugins, even if no dependencies or fetch fails
             if let Err(e) = run_plugins("preinstall", &ctx) {
-                error!("Preinstall plugin failed: {}", e);
+                error!("Preinstall plugin failed: {e}");
                 std::process::exit(1);
             }
             // Check for frozen lockfile mismatch
@@ -143,7 +143,7 @@ fn main() {
                     if let Some(map) = deps.as_object() {
                         for dep in map.keys() {
                             if !lock.packages.contains_key(dep) {
-                                error!("Dependency '{}' in package.json missing from bolt.lock", dep);
+                                error!("Dependency '{dep}' in package.json missing from bolt.lock");
                                 mismatched = true;
                             }
                         }
@@ -153,7 +153,7 @@ fn main() {
                     if let Some(deps) = &pj.dependencies {
                         if let Some(map) = deps.as_object() {
                             if !map.contains_key(dep) {
-                                error!("Package '{}' in bolt.lock missing from package.json", dep);
+                                error!("Package '{dep}' in bolt.lock missing from package.json");
                                 mismatched = true;
                             }
                         }
@@ -175,12 +175,12 @@ fn main() {
                 };
                 // Run preinstall plugins for this package
                 if let Err(e) = run_plugins("preinstall", &ctx) {
-                    error!("Preinstall plugin failed: {}", e);
+                    error!("Preinstall plugin failed: {e}");
                     std::process::exit(1);
                 }
                 // If already in lockfile, use pinned version
                 if let Some(entry) = lock.packages.get(pkg) {
-                    info!("Using {}@{} from lockfile", pkg, entry.version);
+                    info!("Using {pkg}@{version} from lockfile", version=entry.version);
                     // Run postinstall plugins for this package
                     let ctx_post = PluginContext {
                         hook: "postinstall".to_string(),
@@ -190,28 +190,28 @@ fn main() {
                         env: std::env::vars().collect(),
                     };
                     if let Err(e) = run_plugins("postinstall", &ctx_post) {
-                        error!("Postinstall plugin failed: {}", e);
+                        error!("Postinstall plugin failed: {e}");
                         std::process::exit(1);
                     }
                     return;
                 }
-                let url = format!("http://localhost:4000/v1/{}/", pkg);
-                info!("Fetching metadata from {}", url);
+                let url = format!("http://localhost:4000/v1/{pkg}/");
+                info!("Fetching metadata from {url}");
                 let meta_resp = reqwest::blocking::get(&url);
                 match meta_resp {
                     Ok(resp) => {
                         if resp.status().is_success() {
                             let meta: serde_json::Value = resp.json().unwrap();
                             let versions = meta["versions"].as_object().unwrap();
-                            let latest = versions.keys().last().unwrap();
-                            let tarball_url = format!("http://localhost:4000/v1/{}/{}/", pkg, latest);
-                            info!("Downloading tarball from {}", tarball_url);
+                            let latest = versions.keys().next_back().unwrap();
+                            let tarball_url = format!("http://localhost:4000/v1/{pkg}/{latest}/");
+                            info!("Downloading tarball from {tarball_url}");
                             let tarball_resp = reqwest::blocking::get(&tarball_url).unwrap();
                             if tarball_resp.status().is_success() {
                                 let bytes = tarball_resp.bytes().unwrap();
-                                let cache_dir = format!(".boltpm/cache/{}-{}", pkg, latest);
+                                let cache_dir = format!(".boltpm/cache/{pkg}-{latest}");
                                 fs::create_dir_all(&cache_dir).unwrap();
-                                let tarball_path = format!("{}/package.tgz", cache_dir);
+                                let tarball_path = format!("{cache_dir}/package.tgz");
                                 fs::write(&tarball_path, &bytes).unwrap();
                                 // PluginContext for hooks
                                 let ctx = PluginContext {
@@ -231,13 +231,13 @@ fn main() {
                                 let decompressed = flate2::read::GzDecoder::new(tar_gz);
                                 let mut archive = tar::Archive::new(decompressed);
                                 if let Err(e) = archive.unpack(&cache_dir) {
-                                    println!("Extraction failed: {}", e);
+                                    println!("Extraction failed: {e}");
                                     let _ = run_plugins("onError", &ctx);
                                     return;
                                 }
-                                info!("Extracted to {}", cache_dir);
+                                info!("Extracted to {cache_dir}");
                                 // Recursively install dependencies if package.json exists in extracted dir
-                                let extracted_pj = format!("{}/package.json", cache_dir);
+                                let extracted_pj = format!("{cache_dir}/package.json");
                                 let mut dependencies = std::collections::BTreeMap::new();
                                 if let Ok(dep_pj_str) = fs::read_to_string(&extracted_pj) {
                                     if let Ok(dep_pj) = serde_json::from_str::<PackageJson>(&dep_pj_str) {
@@ -260,12 +260,12 @@ fn main() {
                                 *changed = true;
                                 // Call postinstall plugin hook
                                 if let Err(e) = run_plugins("postinstall", &ctx) {
-                                    error!("Postinstall plugin failed: {}", e);
+                                    error!("Postinstall plugin failed: {e}");
                                     std::process::exit(1);
                                 }
-                                info!("Install complete: {}@{}", pkg, latest);
+                                info!("Install complete: {pkg}@{latest}");
                             } else {
-                                error!("Failed to download tarball: {}", tarball_resp.status());
+                                error!("Failed to download tarball: {status}", status=tarball_resp.status());
                                 let ctx = PluginContext {
                                     hook: "preinstall".to_string(),
                                     package_name: pkg.to_string(),
@@ -276,11 +276,11 @@ fn main() {
                                 let _ = run_plugins("onError", &ctx);
                             }
                         } else {
-                            error!("Failed to fetch metadata: {}", resp.status());
+                            error!("Failed to fetch metadata: {status}", status=resp.status());
                         }
                     }
                     Err(e) => {
-                        error!("Error fetching metadata: {}", e);
+                        error!("Error fetching metadata: {e}");
                     }
                 }
                 // Always run postinstall plugins for this package
@@ -292,7 +292,7 @@ fn main() {
                     env: std::env::vars().collect(),
                 };
                 if let Err(e) = run_plugins("postinstall", &ctx_post) {
-                    error!("Postinstall plugin failed: {}", e);
+                    error!("Postinstall plugin failed: {e}");
                     std::process::exit(1);
                 }
             }
@@ -330,7 +330,7 @@ fn main() {
             }
         }
         Commands::Remove { package } => {
-            info!("Removing package: {}", package);
+            info!("Removing package: {package}");
             let mut lock = read_lockfile();
             // Remove the package and its dependencies recursively from lockfile
             fn remove_pkg(pkg: &str, lock: &mut BoltLock) {
@@ -344,12 +344,12 @@ fn main() {
             }
             remove_pkg(&package, &mut lock);
             write_lockfile(&lock);
-            info!("Removed {} and its dependencies from bolt.lock.", package);
+            info!("Removed {package} and its dependencies from bolt.lock.");
             // TODO: Remove from node_modules, filesystem, etc.
             // TODO: Call onError plugin hook if needed
         }
         Commands::Update { package } => {
-            info!("Updating package: {:?}", package);
+            info!("Updating package: {package:?}");
             let pj_str = fs::read_to_string("package.json").expect("No package.json found");
             let pj: PackageJson = serde_json::from_str(&pj_str).expect("Invalid package.json");
             let mut lock = read_lockfile();
@@ -360,23 +360,23 @@ fn main() {
                 // Reinstall to get latest and update lockfile
                 // (reuse install_pkg logic from install command)
                 // For now, duplicate logic for clarity
-                let url = format!("http://localhost:4000/v1/{}/", pkg);
-                info!("Fetching metadata from {}", url);
+                let url = format!("http://localhost:4000/v1/{pkg}/");
+                info!("Fetching metadata from {url}");
                 let meta_resp = reqwest::blocking::get(&url);
                 match meta_resp {
                     Ok(resp) => {
                         if resp.status().is_success() {
                             let meta: serde_json::Value = resp.json().unwrap();
                             let versions = meta["versions"].as_object().unwrap();
-                            let latest = versions.keys().last().unwrap();
-                            let tarball_url = format!("http://localhost:4000/v1/{}/{}/", pkg, latest);
-                            info!("Downloading tarball from {}", tarball_url);
+                            let latest = versions.keys().next_back().unwrap();
+                            let tarball_url = format!("http://localhost:4000/v1/{pkg}/{latest}/");
+                            info!("Downloading tarball from {tarball_url}");
                             let tarball_resp = reqwest::blocking::get(&tarball_url).unwrap();
                             if tarball_resp.status().is_success() {
                                 let bytes = tarball_resp.bytes().unwrap();
-                                let cache_dir = format!(".boltpm/cache/{}-{}", pkg, latest);
+                                let cache_dir = format!(".boltpm/cache/{pkg}-{latest}");
                                 fs::create_dir_all(&cache_dir).unwrap();
-                                let tarball_path = format!("{}/package.tgz", cache_dir);
+                                let tarball_path = format!("{cache_dir}/package.tgz");
                                 fs::write(&tarball_path, &bytes).unwrap();
                                 // PluginContext for hooks
                                 let ctx = PluginContext {
@@ -391,12 +391,12 @@ fn main() {
                                 let decompressed = flate2::read::GzDecoder::new(tar_gz);
                                 let mut archive = tar::Archive::new(decompressed);
                                 if let Err(e) = archive.unpack(&cache_dir) {
-                                    println!("Extraction failed: {}", e);
+                                    println!("Extraction failed: {e}");
                                     let _ = run_plugins("onError", &ctx);
                                     return;
                                 }
-                                info!("Extracted to {}", cache_dir);
-                                let extracted_pj = format!("{}/package.json", cache_dir);
+                                info!("Extracted to {cache_dir}");
+                                let extracted_pj = format!("{cache_dir}/package.json");
                                 let mut dependencies = std::collections::BTreeMap::new();
                                 if let Ok(dep_pj_str) = fs::read_to_string(&extracted_pj) {
                                     if let Ok(dep_pj) = serde_json::from_str::<PackageJson>(&dep_pj_str) {
@@ -417,9 +417,9 @@ fn main() {
                                 });
                                 *changed = true;
                                 let _ = run_plugins("postinstall", &ctx);
-                                info!("Update complete: {}@{}", pkg, latest);
+                                info!("Update complete: {pkg}@{latest}");
                             } else {
-                                error!("Failed to download tarball: {}", tarball_resp.status());
+                                error!("Failed to download tarball: {status}", status=tarball_resp.status());
                                 let ctx = PluginContext {
                                     hook: "preinstall".to_string(),
                                     package_name: pkg.to_string(),
@@ -430,11 +430,11 @@ fn main() {
                                 let _ = run_plugins("onError", &ctx);
                             }
                         } else {
-                            error!("Failed to fetch metadata: {}", resp.status());
+                            error!("Failed to fetch metadata: {status}", status=resp.status());
                         }
                     }
                     Err(e) => {
-                        error!("Error fetching metadata: {}", e);
+                        error!("Error fetching metadata: {e}");
                     }
                 }
             }
@@ -460,36 +460,36 @@ fn main() {
             }
         }
         Commands::Run { script } => {
-            info!("Running script: {} (stub)", script);
+            info!("Running script: {script} (stub)");
             // TODO: Run script from package.json
         }
         Commands::Link { path } => {
-            info!("Linking path: {:?} (stub)", path);
+            info!("Linking path: {path:?} (stub)");
             // TODO: Link local package
         }
         Commands::Yank { package, version } => {
-            let url = format!("http://localhost:4000/v1/{}/{}/yank", package, version);
+            let url = format!("http://localhost:4000/v1/{package}/{version}/yank");
             let resp = reqwest::blocking::Client::new().post(&url).send();
             match resp {
                 Ok(r) => println!("{}", r.text().unwrap()),
-                Err(e) => println!("Error: {}", e),
+                Err(e) => println!("Error: {e}"),
             }
         }
         Commands::Unyank { package, version } => {
-            let url = format!("http://localhost:4000/v1/{}/{}/unyank", package, version);
+            let url = format!("http://localhost:4000/v1/{package}/{version}/unyank");
             let resp = reqwest::blocking::Client::new().post(&url).send();
             match resp {
                 Ok(r) => println!("{}", r.text().unwrap()),
-                Err(e) => println!("Error: {}", e),
+                Err(e) => println!("Error: {e}"),
             }
         }
         Commands::Deprecate { package, version, message } => {
-            let url = format!("http://localhost:4000/v1/{}/{}/deprecate", package, version);
+            let url = format!("http://localhost:4000/v1/{package}/{version}/deprecate");
             let body = serde_json::json!({ "message": message });
             let resp = reqwest::blocking::Client::new().post(&url).json(&body).send();
             match resp {
                 Ok(r) => println!("{}", r.text().unwrap()),
-                Err(e) => println!("Error: {}", e),
+                Err(e) => println!("Error: {e}"),
             }
         }
         Commands::Search { query } => {
@@ -498,9 +498,9 @@ fn main() {
             match resp {
                 Ok(r) => {
                     let text = r.text().unwrap();
-                    println!("Search results: {}", text);
+                    println!("Search results: {text}");
                 }
-                Err(e) => println!("Error: {}", e),
+                Err(e) => println!("Error: {e}"),
             }
         }
         Commands::Lock => {

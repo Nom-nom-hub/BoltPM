@@ -4,44 +4,43 @@ use std::fmt;
 use libloading::{Library, Symbol};
 use plugin_api::PluginContext;
 use log::{debug, error, info};
-use serde_json;
 
 #[derive(Debug)]
 pub enum PluginError {
-    IoError(std::io::Error),
-    LoadingError(libloading::Error),
-    SerializationError(serde_json::Error),
-    PluginExecutionError(i32),
-    PluginPanicError,
+    Io(std::io::Error),
+    Loading(libloading::Error),
+    Serialization(serde_json::Error),
+    Execution(i32),
+    Panic,
 }
 
 impl fmt::Display for PluginError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PluginError::IoError(e) => write!(f, "IO error: {}", e),
-            PluginError::LoadingError(e) => write!(f, "Plugin loading error: {}", e),
-            PluginError::SerializationError(e) => write!(f, "Serialization error: {}", e),
-            PluginError::PluginExecutionError(code) => write!(f, "Plugin execution failed with code: {}", code),
-            PluginError::PluginPanicError => write!(f, "Plugin panicked during execution"),
+            PluginError::Io(e) => write!(f, "IO error: {e}"),
+            PluginError::Loading(e) => write!(f, "Plugin loading error: {e}"),
+            PluginError::Serialization(e) => write!(f, "Serialization error: {e}"),
+            PluginError::Execution(code) => write!(f, "Plugin execution failed with code: {code}"),
+            PluginError::Panic => write!(f, "Plugin panicked during execution"),
         }
     }
 }
 
 impl From<std::io::Error> for PluginError {
     fn from(err: std::io::Error) -> Self {
-        PluginError::IoError(err)
+        PluginError::Io(err)
     }
 }
 
 impl From<libloading::Error> for PluginError {
     fn from(err: libloading::Error) -> Self {
-        PluginError::LoadingError(err)
+        PluginError::Loading(err)
     }
 }
 
 impl From<serde_json::Error> for PluginError {
     fn from(err: serde_json::Error) -> Self {
-        PluginError::SerializationError(err)
+        PluginError::Serialization(err)
     }
 }
 
@@ -49,9 +48,8 @@ impl std::error::Error for PluginError {}
 
 pub fn run_plugins(_hook: &str, ctx: &PluginContext) -> Result<(), PluginError> {
     let cwd = std::env::current_dir()
-        .map_err(|e| PluginError::IoError(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            format!("Failed to get current working directory: {}", e)
+        .map_err(|e| PluginError::Io(std::io::Error::other(
+            format!("Failed to get current working directory: {e}")
         )))?;
     let plugins_dir = cwd.join(".boltpm/plugins");
     debug!("Searching for plugins in: {}", plugins_dir.display());
@@ -113,19 +111,19 @@ fn load_and_run_plugin(path: &Path, ctx: &PluginContext) -> Result<(), PluginErr
                     Ok(result) => {
                         if result != 0 {
                             error!("Plugin {} failed with code {}", path.display(), result);
-                            return Err(PluginError::PluginExecutionError(result));
+                            return Err(PluginError::Execution(result));
                         }
                         info!("Plugin {} executed successfully", path.display());
                     }
                     Err(_) => {
                         error!("Plugin {} panicked during execution", path.display());
-                        return Err(PluginError::PluginPanicError);
+                        return Err(PluginError::Panic);
                     }
                 }
             }
             Err(e) => {
                 error!("Failed to load 'run' function from {}: {}", path.display(), e);
-                return Err(PluginError::LoadingError(e));
+                return Err(PluginError::Loading(e));
             }
         }
     }
