@@ -6,15 +6,26 @@ set -euo pipefail
 CANARY_FILE="/tmp/plugin_canary.txt"
 rm -f "$CANARY_FILE"
 
+# Detect OS and set plugin extension
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  PLUGIN_FILE="libtest_plugin.dylib"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  PLUGIN_FILE="libtest_plugin.so"
+else
+  echo "Unsupported OS: $OSTYPE"
+  exit 1
+fi
+
+PLUGIN_PATH="target/debug/deps/$PLUGIN_FILE"
+
+if [[ ! -f "$PLUGIN_PATH" ]]; then
+  echo "No plugin file found at $PLUGIN_PATH. Build the plugin first with: cargo build --package test_plugin"
+  exit 1
+fi
+
 # Set up environment (edit as needed for your workspace)
 PROJECT_DIR="$(pwd)"
 PLUGIN_DIR="$PROJECT_DIR/target/debug/deps"
-PLUGIN_DYLIB="$PLUGIN_DIR/libtest_plugin.dylib"
-
-if [[ ! -f "$PLUGIN_DYLIB" ]]; then
-  echo "No plugin dylib found at $PLUGIN_DYLIB. Build the plugin first with: cargo build --package test_plugin"
-  exit 1
-fi
 
 # Run the CLI with the test plugin, passing a dummy context
 # (You may need to adjust the CLI invocation and arguments)
