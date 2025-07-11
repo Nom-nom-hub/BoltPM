@@ -22,14 +22,36 @@ fn setup_test_plugin(success: bool) {
             println!("[DEBUG] - {:?}", entry.path());
         }
     }
-    let src = if success {
-        "../target/debug/libtest_plugin.dylib"
-    } else {
-        "../target/debug/libtest_plugin_fail.dylib"
+    // Determine plugin file name based on OS
+    let (src, dest_name) = {
+        #[cfg(target_os = "windows")]
+        {
+            if success {
+                ("../target/debug/test_plugin.dll", "test_plugin.dll")
+            } else {
+                ("../target/debug/test_plugin_fail.dll", "test_plugin.dll")
+            }
+        }
+        #[cfg(target_os = "macos")]
+        {
+            if success {
+                ("../target/debug/libtest_plugin.dylib", "test_plugin.dylib")
+            } else {
+                ("../target/debug/libtest_plugin_fail.dylib", "test_plugin.dylib")
+            }
+        }
+        #[cfg(target_os = "linux")]
+        {
+            if success {
+                ("../target/debug/libtest_plugin.so", "test_plugin.so")
+            } else {
+                ("../target/debug/libtest_plugin_fail.so", "test_plugin.so")
+            }
+        }
     };
     println!("[DEBUG] Copying plugin from: {}", src);
     fs::create_dir_all(&plugins_dir).unwrap();
-    fs::copy(src, plugins_dir.join("test_plugin.dylib")).expect(&format!("Failed to copy plugin from {} to {}", src, plugins_dir.join("test_plugin.dylib").display()));
+    fs::copy(src, plugins_dir.join(dest_name)).expect(&format!("Failed to copy plugin from {} to {}", src, plugins_dir.join(dest_name).display()));
     // Print plugins after copy for debug
     if let Ok(entries) = fs::read_dir(&plugins_dir) {
         println!("[DEBUG] Plugins after setup:");
