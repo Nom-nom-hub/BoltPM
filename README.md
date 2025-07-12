@@ -8,6 +8,20 @@
 
 BoltPM is a fast, modern, cross-platform NPM alternative written in Rust. It features a CLI, real-time GUI, private registry, and dynamic plugin system.
 
+## Installation
+
+### From crates.io (Recommended)
+```bash
+cargo install boltpm
+```
+
+### From source
+```bash
+git clone https://github.com/nom-nom-hub/boltpm.git
+cd boltpm
+cargo build --workspace
+```
+
 ## Features
 - CLI: install, remove, update, run, link, etc.
 - GUI: Tauri desktop app with live logs, dependency tree, search, config, and dark mode
@@ -15,6 +29,26 @@ BoltPM is a fast, modern, cross-platform NPM alternative written in Rust. It fea
 - Plugins: dynamic hooks for install lifecycle
 
 ## Quick Start
+
+### Using the installed binary
+```bash
+# Initialize a new project
+boltpm init
+
+# Install a package
+boltpm install lodash
+
+# Remove a package
+boltpm remove lodash
+
+# Update all packages
+boltpm update
+
+# Run a script
+boltpm run build
+```
+
+### Building from source
 
 ### 1. Build All Components
 ```sh
@@ -49,29 +83,47 @@ cargo tauri dev
 
 ## Usage Examples
 
-- **Install a package:**
-  ```sh
-  boltpm install lodash
-  ```
-- **Remove a package:**
-  ```sh
-  boltpm remove lodash
-  ```
-- **Update all packages:**
-  ```sh
-  boltpm update
-  ```
-- **Run a script:**
-  ```sh
-  boltpm run build
-  ```
-- **Publish a package:**
-  ```sh
-  curl -X PUT -F "version=1.0.0" -F "description=My lib" -F "tarball=@package.tgz" http://localhost:4000/v1/mylib/
-  ```
-- **Use a plugin:**
-  - Place your compiled `.so`/`.dylib`/`.dll` in `.boltpm/plugins/`.
-  - Plugins are called automatically on install/remove/update.
+### Basic Commands
+```bash
+# Initialize a new project
+boltpm init
+
+# Install a package
+boltpm install lodash
+
+# Remove a package
+boltpm remove lodash
+
+# Update all packages
+boltpm update
+
+# Run a script
+boltpm run build
+
+# List installed packages
+boltpm list
+
+# Search for packages
+boltpm search react
+```
+
+### Advanced Usage
+```bash
+# Install with specific version
+boltpm install lodash@4.17.21
+
+# Install as dev dependency
+boltpm install --dev jest
+
+# Install globally
+boltpm install -g typescript
+
+# Publish a package to your registry
+curl -X PUT -F "version=1.0.0" -F "description=My lib" -F "tarball=@package.tgz" http://localhost:4000/v1/mylib/
+
+# Use plugins (place compiled .so/.dylib/.dll in .boltpm/plugins/)
+# Plugins are called automatically on install/remove/update
+```
 
 ## Troubleshooting & FAQ
 

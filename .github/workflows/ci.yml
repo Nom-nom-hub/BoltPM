@@ -43,11 +43,17 @@ jobs:
         chmod +x scripts/debug_plugin.sh
         chmod +x scripts/rebuild_all.sh
         echo "✅ Scripts are now executable"
+        
+    - name: Clean build artifacts
+      run: |
+        echo "🧹 Cleaning previous build artifacts..."
+        cargo clean
+        echo "✅ Clean completed"
           
     - name: Build core crates
       run: |
         echo "🔨 Building core functionality (excluding GUI)..."
-        cargo build --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
+        cargo build --workspace --exclude app --verbose
         echo "✅ Core build completed successfully"
       
     - name: Check plugin_api duplication
@@ -56,7 +62,7 @@ jobs:
     - name: Run core tests
       run: |
         echo "🧪 Running core tests (excluding GUI)..."
-        cargo test --package boltpm --package plugin_api --package test_plugin --package sample_plugin --verbose
+        cargo test --workspace --exclude app --verbose
         echo "✅ Core tests completed successfully"
       
     - name: Run FFI verification
@@ -65,7 +71,7 @@ jobs:
     - name: Run clippy on core crates
       run: |
         echo "🔍 Running clippy on core crates..."
-        cargo clippy --package boltpm --package plugin_api --package test_plugin --package sample_plugin -- -D warnings
+        cargo clippy --workspace --exclude app -- -D warnings
         echo "✅ Clippy checks passed"
       
     - name: Check formatting
