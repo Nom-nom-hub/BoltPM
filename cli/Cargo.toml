@@ -24,7 +24,7 @@ zip = "0.6"
 tokio = { version = "1", features = ["full"] }
 rayon = "1"
 libloading = "0.8"
-plugin_api = { path = "../plugin_api" }
+plugin_api = "0.1.1"
 urlencoding = "2.1" 
 thiserror = "1"
 wasmtime = { version = "10", optional = true }
