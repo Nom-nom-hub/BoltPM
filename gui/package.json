@@ -1,0 +1,14 @@
+{
+  "name": "boltpm-gui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BoltPM GUI powered by Tauri.",
+  "scripts": {
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+} 

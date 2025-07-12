@@ -1,0 +1,14 @@
+productName = "BoltPM Desktop"
+version = "0.1.0"
+identifier = "com.boltpm.desktop"
+
+[build]
+beforeBuildCommand = ""
+beforeDevCommand = ""
+devPath = "src/frontend"
+distDir = "src/frontend"
+
+[[windows]]
+title = "BoltPM Desktop"
+width = 800
+height = 600

@@ -1,3 +1,9 @@
+[![Crates.io - boltpm](https://img.shields.io/crates/v/boltpm.svg)](https://crates.io/crates/boltpm)
+[![Crates.io - plugin_api](https://img.shields.io/crates/v/plugin_api.svg)](https://crates.io/crates/plugin_api)
+
+- [boltpm on crates.io](https://crates.io/crates/boltpm)
+- [plugin_api on crates.io](https://crates.io/crates/plugin_api)
+
 # BoltPM
 
 BoltPM is a fast, modern, cross-platform NPM alternative written in Rust. It features a CLI, real-time GUI, private registry, and dynamic plugin system.

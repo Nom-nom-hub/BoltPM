@@ -1,0 +1,16 @@
+[package]
+name = "plugin_api"
+version = "0.1.0"
+edition = "2021"
+authors = ["Teck <teckmillion17@gmail.com>"]
+description = "A blazing fast package manager and CLI tool."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/nom-nom-hub/boltpm"
+readme = "../README.md"
+
+[lib]
+name = "plugin_api"
+path = "src/lib.rs" 
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] } 
