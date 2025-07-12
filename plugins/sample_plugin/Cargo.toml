@@ -8,7 +8,7 @@ name = "sample_plugin"
 crate-type = ["cdylib"]
 
 [dependencies]
-plugin_api = { path = "../../plugin_api" }
+plugin_api = "0.1.1"
 serde_json = "1.0"
 
 [dev-dependencies]

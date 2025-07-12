@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "cli",
-    "plugin_api",
     "plugins/sample_plugin",
     "registry",
     "gui/src-tauri",
