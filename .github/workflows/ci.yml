@@ -32,7 +32,7 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-cargo-
           
@@ -48,6 +48,7 @@ jobs:
       run: |
         echo "🧹 Cleaning previous build artifacts..."
         cargo clean
+        rm -rf target/
         echo "✅ Clean completed"
           
     - name: Build core crates
