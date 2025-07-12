@@ -106,9 +106,9 @@ async fn publish_package(
         Some(b) => b,
         None => return (StatusCode::BAD_REQUEST, "Missing tarball".to_string()),
     };
-    let pkg_dir = format!("packages/{}/{}", pkg, version);
+    let pkg_dir = format!("packages/{pkg}/{version}");
     fs::create_dir_all(&pkg_dir).ok();
-    fs::write(format!("{}/package.tgz", pkg_dir), &tarball_bytes).ok();
+    fs::write(format!("{pkg_dir}/package.tgz"), &tarball_bytes).ok();
     // Update packages.json
     let meta_path = FsPath::new("packages/packages.json");
     let mut meta: HashMap<String, PackageMeta> = if meta_path.exists() {
@@ -134,7 +134,7 @@ async fn publish_package(
     fs::write(meta_path, serde_json::to_vec_pretty(&meta).unwrap()).ok();
     (
         StatusCode::OK,
-        format!("Published package: {}@{}", pkg, version),
+        format!("Published package: {pkg}@{version}"),
     )
 }
 
@@ -157,7 +157,7 @@ async fn get_metadata(Path(pkg): Path<String>) -> impl IntoResponse {
 }
 
 async fn get_tarball(Path((pkg, version)): Path<(String, String)>) -> Response {
-    let path = format!("packages/{}/{}/package.tgz", pkg, version);
+    let path = format!("packages/{pkg}/{version}/package.tgz");
     if let Ok(bytes) = fs::read(&path) {
         Response::builder()
             .status(StatusCode::OK)
@@ -193,7 +193,7 @@ async fn yank_version(Path((pkg, version)): Path<(String, String)>) -> impl Into
         if let Some(ver_meta) = pkg_meta.versions.get_mut(&version) {
             ver_meta.yanked = true;
             fs::write(meta_path, serde_json::to_vec_pretty(&meta).unwrap()).ok();
-            return (StatusCode::OK, format!("Yanked {}@{}", pkg, version));
+            return (StatusCode::OK, format!("Yanked {pkg}@{version}"));
         }
     }
     (
@@ -213,7 +213,7 @@ async fn unyank_version(Path((pkg, version)): Path<(String, String)>) -> impl In
         if let Some(ver_meta) = pkg_meta.versions.get_mut(&version) {
             ver_meta.yanked = false;
             fs::write(meta_path, serde_json::to_vec_pretty(&meta).unwrap()).ok();
-            return (StatusCode::OK, format!("Unyanked {}@{}", pkg, version));
+            return (StatusCode::OK, format!("Unyanked {pkg}@{version}"));
         }
     }
     (
@@ -242,7 +242,7 @@ async fn deprecate_version(
             ver_meta.deprecated = true;
             ver_meta.deprecation_message = req.message;
             fs::write(meta_path, serde_json::to_vec_pretty(&meta).unwrap()).ok();
-            return (StatusCode::OK, format!("Deprecated {}@{}", pkg, version));
+            return (StatusCode::OK, format!("Deprecated {pkg}@{version}"));
         }
     }
     (
