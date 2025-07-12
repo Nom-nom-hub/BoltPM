@@ -5,7 +5,7 @@
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
-    "devPath": "../frontend",
+    "devUrl": "../frontend",
     "distDir": "../frontend"
   },
   "tauri": {
