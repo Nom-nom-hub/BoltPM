@@ -1,6 +1,6 @@
 [package]
 name = "plugin_api"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Teck <teckmillion17@gmail.com>"]
 description = "A blazing fast package manager and CLI tool."
